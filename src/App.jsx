@@ -54,7 +54,6 @@ export default function App() {
             </span>
             <span className="brand-name">Prompt&nbsp;Studio</span>
           </div>
-          <span className="lang">🌐 한국어</span>
         </div>
       </header>
 
