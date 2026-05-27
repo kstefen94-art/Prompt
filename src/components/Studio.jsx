@@ -59,6 +59,7 @@ export default function Studio({ user, onGoProfile }) {
   // 캐릭터 LoRA
   const [characters, setCharacters] = useState([])
   const [selectedChar, setSelectedChar] = useState('')
+  const [loraScale, setLoraScale] = useState(0.9)
   const [showTrain, setShowTrain] = useState(false)
   const [trainFiles, setTrainFiles] = useState([])
   const [charName, setCharName] = useState('')
@@ -246,6 +247,7 @@ export default function Studio({ user, onGoProfile }) {
                 refImageUrls,
                 inputFiles: adhocFiles,
                 loraUrl: j.loraUrl,
+                loraScale,
               },
               user.id,
             )
@@ -344,6 +346,20 @@ export default function Studio({ user, onGoProfile }) {
                 선택 시 Z-Image가 그 인물로 고정 생성됩니다(모델 선택 무시).
               </span>
             </div>
+            {selectedChar && (
+              <div className="field">
+                <label>LoRA 강도: {loraScale}</label>
+                <input
+                  type="range"
+                  min="0.4"
+                  max="1.2"
+                  step="0.05"
+                  value={loraScale}
+                  onChange={(e) => setLoraScale(Number(e.target.value))}
+                />
+                <span className="hint">너무 높으면 깨지거나 검게 나올 수 있어요. 보통 0.8~1.0.</span>
+              </div>
+            )}
             <button className="example-toggle" onClick={() => setShowTrain((s) => !s)}>
               ＋ 새 캐릭터 학습 {showTrain ? '▲' : '▼'}
             </button>
