@@ -893,6 +893,80 @@ code {
   font-size: 0.85rem;
 }
 
+/* ---------- Drafts (임시저장) ---------- */
+.drafts {
+  max-width: 640px;
+  margin: 28px auto 0;
+  text-align: left;
+  border-top: 1px solid var(--border);
+  padding-top: 22px;
+}
+.drafts-title {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+.draft-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.draft-card {
+  display: flex;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+}
+.draft-thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.draft-thumbs img,
+.draft-thumbs video {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  display: block;
+}
+.draft-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.draft-prompt {
+  margin: 0;
+  background: var(--code-bg);
+  border-radius: 10px;
+  padding: 10px;
+  font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #5a4d40;
+  max-height: 110px;
+  overflow-y: auto;
+}
+.draft-actions {
+  display: flex;
+  gap: 8px;
+}
+.draft-actions .builder-btn {
+  flex: 1;
+}
+.draft-actions .delete-btn {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 10px 14px;
+}
+
 /* ---------- Profile / empty ---------- */
 .profile {
   text-align: center;

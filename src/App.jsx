@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Gallery from './components/Gallery.jsx'
 import Generator from './components/Generator.jsx'
 import Studio from './components/Studio.jsx'
+import Drafts from './components/Drafts.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 import { useAuth } from './lib/useAuth.js'
 
@@ -56,7 +57,7 @@ export default function App() {
         )}
         {activeTab === 'generator' && <Generator onViewWorks={viewWorks} />}
         {activeTab === 'studio' && auth.user && (
-          <Studio user={auth.user} onGoGallery={() => setTab('gallery')} />
+          <Studio user={auth.user} onGoProfile={() => setTab('profile')} />
         )}
         {activeTab === 'profile' && (
           <div className="profile">
@@ -66,6 +67,7 @@ export default function App() {
               직접 만든 AI 이미지와 그것을 만든 프롬프트를 모아두는 공간입니다.
             </p>
             <AuthPanel auth={auth} />
+            {auth.user && <Drafts />}
           </div>
         )}
       </main>

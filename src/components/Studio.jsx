@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { templates } from '../data/templates.js'
-import { generate, saveGeneratedWork } from '../lib/falClient.js'
+import { generate } from '../lib/falClient.js'
+import { addDraft } from '../lib/drafts.js'
 import ToolPicker from './ToolPicker.jsx'
 
 const MODES = [
   { id: 'txt2img', label: 'Txt → Img' },
   { id: 'img2img', label: 'Img → Img' },
-  { id: 'face', label: 'InstantID' },
+  { id: 'face', label: '얼굴 레퍼런스' },
 ]
 
 const RATIOS = [
@@ -31,7 +32,7 @@ function computeDims(ratioId, longSide) {
   return { width: w, height: h }
 }
 
-export default function Studio({ user, onGoGallery }) {
+export default function Studio({ user, onGoProfile }) {
   const [mode, setMode] = useState('txt2img')
   const [prompt, setPrompt] = useState('')
   const [negative, setNegative] = useState('')
@@ -82,7 +83,7 @@ export default function Studio({ user, onGoGallery }) {
         user.id,
       )
       setResults(images)
-      setTools([mode === 'face' ? 'InstantID' : 'fal Z-Image'])
+      setTools([mode === 'face' ? 'IP-Adapter FaceID' : 'fal Z-Image'])
       if (!title) setTitle(prompt.trim().slice(0, 20))
     } catch (e) {
       setError(e.message)
@@ -91,25 +92,32 @@ export default function Studio({ user, onGoGallery }) {
     }
   }
 
-  async function save() {
-    if (!title.trim()) return setSaveMsg('제목을 입력하세요.')
+  async function saveDraft() {
     setSaving(true)
     setSaveMsg('')
     try {
-      await saveGeneratedWork({
+      const media = []
+      for (const url of results) {
+        const resp = await fetch(url)
+        const blob = await resp.blob()
+        media.push({ type: blob.type.startsWith('video') ? 'video' : 'image', blob })
+      }
+      await addDraft({
+        id: crypto.randomUUID(),
         title: title.trim(),
         categories: categories.split(',').map((c) => c.trim()).filter(Boolean),
         tools,
         templateId,
         prompt: prompt.trim(),
-        imageUrls: results,
+        media,
+        createdAt: Date.now(),
       })
-      setSaveMsg('갤러리에 저장했습니다 ✓')
+      setSaveMsg('임시저장됨 — 프로필 탭에서 갤러리로 보낼 수 있어요 ✓')
       setResults([])
       setTitle('')
       setCategories('')
     } catch (e) {
-      setSaveMsg(`저장 실패: ${e.message}`)
+      setSaveMsg(`임시저장 실패: ${e.message}`)
     } finally {
       setSaving(false)
     }
@@ -236,7 +244,7 @@ export default function Studio({ user, onGoGallery }) {
             ))}
           </div>
           <div className="save-form">
-            <h3>갤러리에 저장</h3>
+            <h3>임시저장</h3>
             <div className="field">
               <label>제목 *</label>
               <input value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -264,8 +272,8 @@ export default function Studio({ user, onGoGallery }) {
                 ))}
               </select>
             </div>
-            <button className="builder-btn full" onClick={save} disabled={saving}>
-              {saving ? '저장 중…' : '갤러리에 저장'}
+            <button className="builder-btn full" onClick={saveDraft} disabled={saving}>
+              {saving ? '저장 중…' : '임시저장'}
             </button>
           </div>
         </div>
@@ -274,9 +282,9 @@ export default function Studio({ user, onGoGallery }) {
       {saveMsg && (
         <div className="save-msg">
           <span>{saveMsg}</span>
-          {saveMsg.includes('저장했습니다') && (
-            <button className="example-toggle" onClick={onGoGallery}>
-              갤러리에서 보기 →
+          {saveMsg.includes('임시저장됨') && (
+            <button className="example-toggle" onClick={onGoProfile}>
+              프로필에서 보기 →
             </button>
           )}
         </div>

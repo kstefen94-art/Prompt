@@ -32,12 +32,13 @@ const MODELS = {
     }),
   },
   face: {
-    id: 'fal-ai/instant-id',
+    // fal에는 InstantID 슬러그가 없어, 동일하게 얼굴 일관성을 주는 IP-Adapter Face ID 사용.
+    id: 'fal-ai/ip-adapter-face-id',
     build: (p) => ({
       prompt: p.prompt,
       face_image_url: p.faceImageUrl,
       negative_prompt: p.negativePrompt || undefined,
-      num_images: p.numImages || 1,
+      num_samples: p.numImages || 1,
     }),
   },
 }

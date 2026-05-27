@@ -37,24 +37,28 @@ export async function generate(params, userId) {
   return data.images || []
 }
 
-export async function saveGeneratedWork({ title, categories, tools, templateId, prompt, imageUrls }) {
+// 임시저장(IndexedDB) 한 항목을 갤러리로 발행: blob들을 스토리지에 올리고 works에 삽입.
+export async function publishDraft(draft) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
   const media = []
-  for (const url of imageUrls) {
-    const resp = await fetch(url)
-    const blob = await resp.blob()
-    const ext = (blob.type.split('/')[1] || 'png').split('+')[0]
+  for (const m of draft.media) {
+    const ext = (m.blob.type.split('/')[1] || 'png').split('+')[0]
     const path = `${user.id}/${crypto.randomUUID()}.${ext}`
     const { error } = await supabase.storage
       .from(BUCKET)
-      .upload(path, blob, { contentType: blob.type })
+      .upload(path, m.blob, { contentType: m.blob.type })
     if (error) throw error
-    media.push({ type: blob.type.startsWith('video') ? 'video' : 'image', path })
+    media.push({ type: m.type, path })
   }
-  const { error } = await supabase
-    .from('works')
-    .insert({ title, categories, tools: tools || [], template_id: templateId || null, prompt, media })
+  const { error } = await supabase.from('works').insert({
+    title: draft.title || '제목 없음',
+    categories: draft.categories || [],
+    tools: draft.tools || [],
+    template_id: draft.templateId || null,
+    prompt: draft.prompt || '',
+    media,
+  })
   if (error) throw error
 }
