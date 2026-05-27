@@ -3,6 +3,7 @@ import { generate } from '../lib/falClient.js'
 import { addDraft } from '../lib/drafts.js'
 import { downloadUrl } from '../lib/download.js'
 import { listRefs, addRef, deleteRef } from '../lib/refs.js'
+import { comfyGenerate, loadComfy, saveComfy } from '../lib/comfy.js'
 
 const MODES = [
   { id: 'txt2img', label: 'Txt → Img' },
@@ -28,6 +29,7 @@ const TXT_MODELS = [
   { id: 'zimage', label: 'Z-Image (저렴)', tool: 'fal Z-Image', perMp: 0.005 },
   { id: 'flux2', label: 'FLUX 2 Pro (고품질)', tool: 'FLUX 2 Pro', perMp: 0.03 },
   { id: 'seedream', label: 'Seedream 5 Lite (가성비)', tool: 'Seedream 5 Lite', flat: 0.03 },
+  { id: 'comfy', label: '내 PC (ComfyUI·무료)', tool: 'ComfyUI', free: true },
 ]
 const IMG_MODELS = [
   { id: 'kontext', label: 'FLUX Kontext', tool: 'FLUX Kontext', flat: 0.04 },
@@ -51,6 +53,15 @@ export default function Studio({ user, onGoProfile }) {
   const [numImages, setNumImages] = useState(1)
   const [selectedTxt, setSelectedTxt] = useState(['zimage'])
   const [selectedImg, setSelectedImg] = useState(['kontext'])
+  const [comfy, setComfy] = useState(loadComfy)
+
+  function updateComfy(patch) {
+    setComfy((prev) => {
+      const next = { ...prev, ...patch }
+      saveComfy(next)
+      return next
+    })
+  }
 
   // 이번만 쓸 업로드 이미지
   const [refItems, setRefItems] = useState([])
@@ -73,7 +84,8 @@ export default function Studio({ user, onGoProfile }) {
   const setSel = mode === 'img2img' ? setSelectedImg : setSelectedTxt
   const selModels = modelList.filter((m) => selIds.includes(m.id))
   const totalUsd =
-    selModels.reduce((s, m) => s + (m.flat != null ? m.flat : mp * m.perMp), 0) * numImages
+    selModels.reduce((s, m) => s + (m.free ? 0 : m.flat != null ? m.flat : mp * m.perMp), 0) *
+    numImages
   const estWon = Math.round(totalUsd * 1350)
 
   useEffect(() => {
@@ -158,19 +170,36 @@ export default function Studio({ user, onGoProfile }) {
     await Promise.all(
       selModels.map(async (j) => {
         try {
-          const imgs = await generate(
-            {
-              mode,
-              model: j.id,
+          let imgs
+          if (j.id === 'comfy') {
+            if (!comfy.url || !comfy.checkpoint)
+              throw new Error('ComfyUI URL과 체크포인트를 먼저 설정하세요.')
+            imgs = await comfyGenerate({
+              url: comfy.url,
+              checkpoint: comfy.checkpoint,
               prompt: prompt.trim(),
-              negativePrompt: negative.trim() || undefined,
-              imageSize: dims,
+              negative: negative.trim(),
+              width: dims.width,
+              height: dims.height,
               numImages,
-              refImageUrls,
-              inputFiles: adhocFiles,
-            },
-            user.id,
-          )
+              steps: comfy.steps,
+              cfg: comfy.cfg,
+            })
+          } else {
+            imgs = await generate(
+              {
+                mode,
+                model: j.id,
+                prompt: prompt.trim(),
+                negativePrompt: negative.trim() || undefined,
+                imageSize: dims,
+                numImages,
+                refImageUrls,
+                inputFiles: adhocFiles,
+              },
+              user.id,
+            )
+          }
           groups.push({ id: j.id, label: j.label, tool: j.tool, images: imgs })
         } catch (e) {
           errs.push(`${j.label}: ${e.message}`)
@@ -240,6 +269,53 @@ export default function Studio({ user, onGoProfile }) {
           ))}
         </div>
       </div>
+
+      {mode === 'txt2img' && selectedTxt.includes('comfy') && (
+        <div className="ollama-box">
+          <div className="ollama-body">
+            <div className="field">
+              <label>ComfyUI 주소 (터널 URL)</label>
+              <input
+                value={comfy.url}
+                onChange={(e) => updateComfy({ url: e.target.value })}
+                placeholder="예: https://xxxx.trycloudflare.com"
+              />
+            </div>
+            <div className="field">
+              <label>체크포인트 파일명</label>
+              <input
+                value={comfy.checkpoint}
+                onChange={(e) => updateComfy({ checkpoint: e.target.value })}
+                placeholder="예: sd_xl_base_1.0.safetensors"
+              />
+            </div>
+            <div className="field-row">
+              <div className="field">
+                <label>Steps: {comfy.steps}</label>
+                <input
+                  type="range"
+                  min="10"
+                  max="40"
+                  value={comfy.steps}
+                  onChange={(e) => updateComfy({ steps: Number(e.target.value) })}
+                />
+              </div>
+              <div className="field">
+                <label>CFG: {comfy.cfg}</label>
+                <input
+                  type="range"
+                  min="1"
+                  max="12"
+                  step="0.5"
+                  value={comfy.cfg}
+                  onChange={(e) => updateComfy({ cfg: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <span className="hint">SD/SDXL 체크포인트 기준 · PC의 ComfyUI가 켜져 있어야 함</span>
+          </div>
+        </div>
+      )}
 
       {mode === 'txt2img' && (
         <>
