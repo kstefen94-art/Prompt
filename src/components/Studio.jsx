@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { generate } from '../lib/falClient.js'
 import { addDraft } from '../lib/drafts.js'
 import { downloadUrl } from '../lib/download.js'
+import { listRefs, addRef, deleteRef, refToFile } from '../lib/refs.js'
 
 const MODES = [
   { id: 'txt2img', label: 'Txt → Img' },
@@ -22,11 +23,15 @@ const QUALITIES = [
   { id: 'max', label: '최고 (2K)', long: 1792 },
 ]
 
-// Txt→Img 모델 (perMp: 메가픽셀당 USD, flat: 장당 고정 USD)
+// perMp: 메가픽셀당 USD, flat: 장당 고정 USD
 const TXT_MODELS = [
   { id: 'zimage', label: 'Z-Image (저렴)', tool: 'fal Z-Image', perMp: 0.005 },
   { id: 'flux2', label: 'FLUX 2 Pro (고품질)', tool: 'FLUX 2 Pro', perMp: 0.03 },
   { id: 'seedream', label: 'Seedream 5 Lite (가성비)', tool: 'Seedream 5 Lite', flat: 0.03 },
+]
+const IMG_MODELS = [
+  { id: 'kontext', label: 'FLUX Kontext', tool: 'FLUX Kontext', flat: 0.04 },
+  { id: 'seedream-edit', label: 'Seedream 4.5 Edit', tool: 'Seedream Edit', flat: 0.04 },
 ]
 
 function computeDims(ratioId, longSide) {
@@ -43,41 +48,52 @@ export default function Studio({ user, onGoProfile }) {
   const [negative, setNegative] = useState('')
   const [ratio, setRatio] = useState('1:1')
   const [quality, setQuality] = useState('standard')
-  const [selectedModels, setSelectedModels] = useState(['zimage'])
   const [numImages, setNumImages] = useState(1)
-  // img2img 참조 이미지(여러 장): { id, file, url }
+  const [selectedTxt, setSelectedTxt] = useState(['zimage'])
+  const [selectedImg, setSelectedImg] = useState(['kontext'])
+
+  // 이번만 쓸 업로드 이미지
   const [refItems, setRefItems] = useState([])
+  // 저장된 레퍼런스 (재사용)
+  const [savedRefs, setSavedRefs] = useState([])
+  const [selectedRefIds, setSelectedRefIds] = useState([])
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [results, setResults] = useState([])
-
-  // 생성 후 자동 임시저장
   const [title, setTitle] = useState('')
   const [saveMsg, setSaveMsg] = useState('')
 
   const longSide = (QUALITIES.find((q) => q.id === quality) || QUALITIES[0]).long
   const dims = computeDims(ratio, longSide)
   const mp = (dims.width * dims.height) / 1_000_000
-  const selModels = TXT_MODELS.filter((m) => selectedModels.includes(m.id))
+
+  const modelList = mode === 'img2img' ? IMG_MODELS : TXT_MODELS
+  const selIds = mode === 'img2img' ? selectedImg : selectedTxt
+  const setSel = mode === 'img2img' ? setSelectedImg : setSelectedTxt
+  const selModels = modelList.filter((m) => selIds.includes(m.id))
   const totalUsd =
     selModels.reduce((s, m) => s + (m.flat != null ? m.flat : mp * m.perMp), 0) * numImages
   const estWon = Math.round(totalUsd * 1350)
 
-  function toggleModel(id) {
-    setSelectedModels((prev) =>
-      prev.includes(id)
-        ? prev.length > 1
-          ? prev.filter((x) => x !== id)
-          : prev
-        : [...prev, id],
-    )
-  }
+  const refUrls = useMemo(() => {
+    const map = {}
+    savedRefs.forEach((r) => (map[r.id] = URL.createObjectURL(r.blob)))
+    return map
+  }, [savedRefs])
+  useEffect(() => () => Object.values(refUrls).forEach((u) => URL.revokeObjectURL(u)), [refUrls])
 
   useEffect(() => {
-    return () => refItems.forEach((it) => URL.revokeObjectURL(it.url))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    listRefs().then(setSavedRefs)
   }, [])
+
+  useEffect(() => () => refItems.forEach((it) => URL.revokeObjectURL(it.url)), []) // eslint-disable-line
+
+  function toggleModel(id) {
+    setSel((prev) =>
+      prev.includes(id) ? (prev.length > 1 ? prev.filter((x) => x !== id) : prev) : [...prev, id],
+    )
+  }
 
   function addRefs(e) {
     const picked = [...e.target.files]
@@ -95,62 +111,26 @@ export default function Studio({ user, onGoProfile }) {
     })
   }
 
-  async function run() {
-    if (!prompt.trim()) return setError('프롬프트를 입력하세요.')
-    if (mode === 'img2img' && refItems.length === 0)
-      return setError('참조 이미지를 1장 이상 선택하세요.')
-    if (mode === 'txt2img' && selectedModels.length === 0)
-      return setError('모델을 1개 이상 선택하세요.')
-    setError('')
-    setSaveMsg('')
-    setBusy(true)
-    setResults([])
-    const autoTitle = prompt.trim().slice(0, 24) || '무제'
-    setTitle(autoTitle)
-
-    const jobs =
-      mode === 'img2img'
-        ? [{ id: 'kontext', label: '편집 결과', tool: 'FLUX Kontext' }]
-        : TXT_MODELS.filter((m) => selectedModels.includes(m.id))
-
-    const groups = []
-    const errs = []
-    await Promise.all(
-      jobs.map(async (j) => {
-        try {
-          const imgs = await generate(
-            {
-              mode,
-              model: j.id,
-              prompt: prompt.trim(),
-              negativePrompt: negative.trim() || undefined,
-              imageSize: dims,
-              numImages,
-              inputFiles: refItems.map((it) => it.file),
-            },
-            user.id,
-          )
-          groups.push({ id: j.id, label: j.label, tool: j.tool, images: imgs })
-        } catch (e) {
-          errs.push(`${j.label}: ${e.message}`)
-        }
-      }),
-    )
-    const order = jobs.map((j) => j.id)
-    groups.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
-    setResults(groups)
-    if (errs.length) setError(errs.join('\n'))
-
-    // 각 모델 결과를 자동 임시저장
-    for (const g of groups) {
-      try {
-        await autoSaveDraft(g.images, `${autoTitle} · ${g.label}`, [g.tool])
-      } catch {
-        /* 개별 저장 실패는 건너뜀 */
-      }
+  async function addSavedRefs(e) {
+    const picked = [...e.target.files]
+    e.target.value = ''
+    for (const f of picked) {
+      await addRef({ id: crypto.randomUUID(), name: f.name, type: f.type, blob: f, createdAt: Date.now() })
     }
-    if (groups.length) setSaveMsg('자동 임시저장됨 — 프로필 탭에서 확인·발행하세요 ✓')
-    setBusy(false)
+    setSavedRefs(await listRefs())
+  }
+  async function removeSavedRef(id) {
+    await deleteRef(id)
+    setSavedRefs(await listRefs())
+    setSelectedRefIds((prev) => prev.filter((x) => x !== id))
+  }
+  function toggleSavedRef(id) {
+    setSelectedRefIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
+  function imgInputFiles() {
+    const saved = savedRefs.filter((r) => selectedRefIds.includes(r.id)).map(refToFile)
+    return [...saved, ...refItems.map((it) => it.file)]
   }
 
   async function autoSaveDraft(images, autoTitle, autoTools) {
@@ -170,6 +150,58 @@ export default function Studio({ user, onGoProfile }) {
       media,
       createdAt: Date.now(),
     })
+  }
+
+  async function run() {
+    if (!prompt.trim()) return setError('프롬프트를 입력하세요.')
+    const inputFiles = mode === 'img2img' ? imgInputFiles() : []
+    if (mode === 'img2img' && inputFiles.length === 0)
+      return setError('참조 이미지를 1장 이상 선택하세요. (저장된 레퍼런스 또는 업로드)')
+    if (selModels.length === 0) return setError('모델을 1개 이상 선택하세요.')
+    setError('')
+    setSaveMsg('')
+    setBusy(true)
+    setResults([])
+    const autoTitle = prompt.trim().slice(0, 24) || '무제'
+    setTitle(autoTitle)
+
+    const groups = []
+    const errs = []
+    await Promise.all(
+      selModels.map(async (j) => {
+        try {
+          const imgs = await generate(
+            {
+              mode,
+              model: j.id,
+              prompt: prompt.trim(),
+              negativePrompt: negative.trim() || undefined,
+              imageSize: dims,
+              numImages,
+              inputFiles,
+            },
+            user.id,
+          )
+          groups.push({ id: j.id, label: j.label, tool: j.tool, images: imgs })
+        } catch (e) {
+          errs.push(`${j.label}: ${e.message}`)
+        }
+      }),
+    )
+    const order = selModels.map((j) => j.id)
+    groups.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+    setResults(groups)
+    if (errs.length) setError(errs.join('\n'))
+
+    for (const g of groups) {
+      try {
+        await autoSaveDraft(g.images, `${autoTitle} · ${g.label}`, [g.tool])
+      } catch {
+        /* skip */
+      }
+    }
+    if (groups.length) setSaveMsg('자동 임시저장됨 — 프로필 탭에서 확인·발행하세요 ✓')
+    setBusy(false)
   }
 
   return (
@@ -198,29 +230,30 @@ export default function Studio({ user, onGoProfile }) {
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={
             mode === 'img2img'
-              ? '예: 이미지1 인물에 이미지2의 옷을 입혀줘 / 셔츠를 파란색으로 바꿔줘'
+              ? '예: 이 인물이 흰 셔츠를 입고 카페에 앉아있는 모습 / 배경을 노을로'
               : '예: a close-up portrait of a woman, golden hour, film grain'
           }
         />
       </div>
 
+      <div className="field">
+        <label>모델 (여러 개 선택해 비교)</label>
+        <div className="chips">
+          {modelList.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={`chip ${selIds.includes(m.id) ? 'chip--active' : ''}`}
+              onClick={() => toggleModel(m.id)}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {mode === 'txt2img' && (
         <>
-          <div className="field">
-            <label>모델 (여러 개 선택해 비교)</label>
-            <div className="chips">
-              {TXT_MODELS.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  className={`chip ${selectedModels.includes(m.id) ? 'chip--active' : ''}`}
-                  onClick={() => toggleModel(m.id)}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
           <div className="field-row">
             <div className="field">
               <label>이미지 비율</label>
@@ -243,38 +276,74 @@ export default function Studio({ user, onGoProfile }) {
               </select>
             </div>
           </div>
-          <span className="hint">
-            {dims.width}×{dims.height} · 모델 {selModels.length}개 · {numImages}장 · 예상 약 {estWon}원
-          </span>
         </>
       )}
 
       {mode === 'img2img' && (
-        <div className="field">
-          <label>참조 이미지 (여러 장 가능) *</label>
-          <input type="file" accept="image/*" multiple onChange={addRefs} />
-          <span className="hint">
-            FLUX Kontext 멀티 참조 · 여러 장을 넣고 "이미지1에 이미지2의 옷을 입혀줘"처럼 지시
-          </span>
-          {refItems.length > 0 && (
-            <div className="edit-media">
-              {refItems.map((it, i) => (
-                <div key={it.id} className="edit-thumb">
-                  <img src={it.url} alt="" />
-                  <button type="button" onClick={() => removeRef(it.id)}>
-                    ✕
-                  </button>
-                  <span className="ref-idx">{i + 1}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <>
+          <div className="field">
+            <label>내 레퍼런스 (한 번 저장해두면 매번 안 올려도 됨)</label>
+            {savedRefs.length > 0 && (
+              <div className="edit-media">
+                {savedRefs.map((r) => (
+                  <div
+                    key={r.id}
+                    className={`edit-thumb ref-thumb ${selectedRefIds.includes(r.id) ? 'sel' : ''}`}
+                    onClick={() => toggleSavedRef(r.id)}
+                  >
+                    <img src={refUrls[r.id]} alt="" />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeSavedRef(r.id)
+                      }}
+                    >
+                      ✕
+                    </button>
+                    {selectedRefIds.includes(r.id) && <span className="ref-check">✓</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className="ref-add">
+              ＋ 레퍼런스 저장
+              <input type="file" accept="image/*" multiple hidden onChange={addSavedRefs} />
+            </label>
+            <span className="hint">탭하면 선택(✓), ✕로 삭제. 선택한 레퍼런스가 이번 생성에 사용됩니다.</span>
+          </div>
+
+          <div className="field">
+            <label>이번만 쓸 이미지 추가 (선택)</label>
+            <input type="file" accept="image/*" multiple onChange={addRefs} />
+            {refItems.length > 0 && (
+              <div className="edit-media">
+                {refItems.map((it) => (
+                  <div key={it.id} className="edit-thumb">
+                    <img src={it.url} alt="" />
+                    <button type="button" onClick={() => removeRef(it.id)}>
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
+
+      <span className="hint">
+        {mode === 'txt2img' ? `${dims.width}×${dims.height} · ` : ''}모델 {selModels.length}개 ·{' '}
+        {numImages}장 · 예상 약 {estWon}원
+      </span>
 
       <div className="field">
         <label>제외할 요소 (negative prompt, 선택)</label>
-        <input value={negative} onChange={(e) => setNegative(e.target.value)} placeholder="예: blurry, low quality, extra fingers" />
+        <input
+          value={negative}
+          onChange={(e) => setNegative(e.target.value)}
+          placeholder="예: blurry, low quality, extra fingers"
+        />
       </div>
 
       <div className="field">

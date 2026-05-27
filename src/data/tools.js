@@ -4,6 +4,7 @@ export const TOOLS = [
   'FLUX 2 Pro',
   'Seedream 5 Lite',
   'FLUX Kontext',
+  'Seedream Edit',
   'ChatGPT',
   'Gemini',
   'Midjourney',

@@ -981,6 +981,46 @@ code {
   padding: 0 4px;
 }
 
+/* 저장된 레퍼런스 선택 */
+.ref-thumb {
+  cursor: pointer;
+}
+.ref-thumb.sel {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+.ref-check {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ref-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  border: 1px dashed var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 9px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  width: fit-content;
+}
+.ref-add:hover {
+  border-color: var(--accent);
+}
+
 /* Txt→Img / Img→Img 세그먼트 토글 */
 .seg {
   display: flex;

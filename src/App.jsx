@@ -12,7 +12,7 @@ import { applyTheme, loadTheme } from './lib/theme.js'
 const HEADERS = {
   gallery: { title: '갤러리', sub: '직접 만든 AI 이미지와 영상 모음' },
   generator: { title: '프롬프트 생성기', sub: '자주 사용되는 프롬프트 구조와 패턴 모음' },
-  studio: { title: '제작', sub: 'Z-Image · InstantID 로 이미지 생성 (나만)' },
+  studio: { title: '제작', sub: 'Z-Image · FLUX · Seedream 으로 생성·편집 (나만)' },
   profile: { title: '프로필', sub: '' },
 }
 

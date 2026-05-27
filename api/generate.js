@@ -41,14 +41,16 @@ const TXT_MODELS = {
   },
 }
 
-// Img→Img: FLUX Kontext (멀티 참조)
-const IMG_MODEL = {
-  id: 'fal-ai/flux-pro/kontext/max/multi',
-  build: (p) => ({
-    prompt: p.prompt,
-    image_urls: p.imageUrls,
-    num_images: p.numImages || 1,
-  }),
+// Img→Img: body.model 로 선택 (기본 kontext)
+const IMG_MODELS = {
+  kontext: {
+    id: 'fal-ai/flux-pro/kontext/max/multi',
+    build: (p) => ({ prompt: p.prompt, image_urls: p.imageUrls, num_images: p.numImages || 1 }),
+  },
+  'seedream-edit': {
+    id: 'fal-ai/bytedance/seedream/v4.5/edit',
+    build: (p) => ({ prompt: p.prompt, image_urls: p.imageUrls, num_images: p.numImages || 1 }),
+  },
 }
 
 async function verifyUser(token) {
@@ -80,7 +82,10 @@ export default async function handler(req, res) {
   }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
-  const model = body.mode === 'img2img' ? IMG_MODEL : TXT_MODELS[body.model] || TXT_MODELS.zimage
+  const model =
+    body.mode === 'img2img'
+      ? IMG_MODELS[body.model] || IMG_MODELS.kontext
+      : TXT_MODELS[body.model] || TXT_MODELS.zimage
   if (!body.prompt) return res.status(400).json({ error: '프롬프트가 필요합니다.' })
   if (body.mode === 'img2img' && !(body.imageUrls && body.imageUrls.length))
     return res.status(400).json({ error: '입력 이미지가 필요합니다.' })
