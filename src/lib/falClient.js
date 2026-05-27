@@ -21,6 +21,7 @@ export async function generate(params, userId) {
     negativePrompt: params.negativePrompt,
     imageSize: params.imageSize,
     numImages: params.numImages,
+    loraUrl: params.loraUrl,
   }
   if (params.mode === 'img2img') {
     // 저장된 레퍼런스는 이미 공개 URL이라 그대로 사용, 1회용 업로드만 새로 올림

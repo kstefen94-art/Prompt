@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import Gallery from './components/Gallery.jsx'
 import Generator from './components/Generator.jsx'
-import Studio from './components/Studio.jsx'
 import Drafts from './components/Drafts.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 import TabIcon from './components/TabIcon.jsx'
 import { useAuth } from './lib/useAuth.js'
+
+// 무거운 제작(Studio)은 지연 로딩 → 갤러리 방문자는 가벼운 번들만 받음
+const Studio = lazy(() => import('./components/Studio.jsx'))
 
 const HEADERS = {
   gallery: { title: '갤러리', sub: '직접 만든 AI 이미지와 영상 모음' },
@@ -73,7 +75,9 @@ export default function App() {
         {/* 제작 탭은 항상 마운트해두고 화면에서만 숨김 → 탭 이동해도 상태·실행 유지 */}
         {auth.user && (
           <div style={{ display: activeTab === 'studio' ? 'block' : 'none' }}>
-            <Studio user={auth.user} onGoProfile={() => setTab('profile')} />
+            <Suspense fallback={<div className="empty"><p>불러오는 중…</p></div>}>
+              <Studio user={auth.user} onGoProfile={() => setTab('profile')} />
+            </Suspense>
           </div>
         )}
         {activeTab === 'profile' && (

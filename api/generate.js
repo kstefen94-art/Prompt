@@ -39,6 +39,15 @@ const TXT_MODELS = {
       num_images: p.numImages || 1,
     }),
   },
+  'zimage-lora': {
+    id: 'fal-ai/z-image/turbo/lora',
+    build: (p) => ({
+      prompt: p.prompt,
+      image_size: p.imageSize || 'square_hd',
+      num_images: p.numImages || 1,
+      loras: p.loraUrl ? [{ path: p.loraUrl, scale: 1 }] : [],
+    }),
+  },
 }
 
 // Img→Img: body.model 로 선택 (기본 kontext)

@@ -4,6 +4,7 @@ import { addDraft } from '../lib/drafts.js'
 import { downloadUrl } from '../lib/download.js'
 import { listRefs, addRef, deleteRef } from '../lib/refs.js'
 import { comfyGenerate, loadComfy, saveComfy } from '../lib/comfy.js'
+import { listCharacters, trainCharacter, deleteCharacter } from '../lib/characters.js'
 
 const MODES = [
   { id: 'txt2img', label: 'Txt → Img' },
@@ -55,6 +56,16 @@ export default function Studio({ user, onGoProfile }) {
   const [selectedImg, setSelectedImg] = useState(['kontext'])
   const [comfy, setComfy] = useState(loadComfy)
 
+  // 캐릭터 LoRA
+  const [characters, setCharacters] = useState([])
+  const [selectedChar, setSelectedChar] = useState('')
+  const [showTrain, setShowTrain] = useState(false)
+  const [trainFiles, setTrainFiles] = useState([])
+  const [charName, setCharName] = useState('')
+  const [charTrigger, setCharTrigger] = useState('')
+  const [training, setTraining] = useState(false)
+  const [trainStatus, setTrainStatus] = useState('')
+
   function updateComfy(patch) {
     setComfy((prev) => {
       const next = { ...prev, ...patch }
@@ -90,7 +101,38 @@ export default function Studio({ user, onGoProfile }) {
 
   useEffect(() => {
     listRefs(user.id).then(setSavedRefs).catch(() => {})
+    listCharacters().then(setCharacters).catch(() => {})
   }, [user.id])
+
+  async function trainNow() {
+    if (!charName.trim()) return setTrainStatus('캐릭터 이름을 입력하세요.')
+    if (trainFiles.length < 4) return setTrainStatus('이미지를 4장 이상(권장 10장+) 선택하세요.')
+    setTraining(true)
+    setTrainStatus('준비 중…')
+    try {
+      await trainCharacter(
+        { name: charName.trim(), trigger: charTrigger.trim(), files: trainFiles, steps: 1000 },
+        user.id,
+        setTrainStatus,
+      )
+      setTrainStatus('완료 ✓')
+      setCharacters(await listCharacters())
+      setTrainFiles([])
+      setCharName('')
+      setCharTrigger('')
+      setShowTrain(false)
+    } catch (e) {
+      setTrainStatus(`실패: ${e.message}`)
+    } finally {
+      setTraining(false)
+    }
+  }
+  async function removeChar(id) {
+    if (!confirm('이 캐릭터를 삭제할까요?')) return
+    await deleteCharacter(id)
+    setCharacters(await listCharacters())
+    if (String(selectedChar) === String(id)) setSelectedChar('')
+  }
 
   useEffect(() => () => refItems.forEach((it) => URL.revokeObjectURL(it.url)), []) // eslint-disable-line
 
@@ -165,10 +207,16 @@ export default function Studio({ user, onGoProfile }) {
     const autoTitle = prompt.trim().slice(0, 24) || '무제'
     setTitle(autoTitle)
 
+    const char = characters.find((c) => String(c.id) === String(selectedChar))
+    const jobs =
+      mode === 'txt2img' && char
+        ? [{ id: 'zimage-lora', label: `${char.name} (LoRA)`, tool: char.name, loraUrl: char.lora_url, trigger: char.trigger }]
+        : selModels
+
     const groups = []
     const errs = []
     await Promise.all(
-      selModels.map(async (j) => {
+      jobs.map(async (j) => {
         try {
           let imgs
           if (j.id === 'comfy') {
@@ -186,16 +234,18 @@ export default function Studio({ user, onGoProfile }) {
               cfg: comfy.cfg,
             })
           } else {
+            const p = j.trigger ? `${j.trigger}, ${prompt.trim()}` : prompt.trim()
             imgs = await generate(
               {
                 mode,
                 model: j.id,
-                prompt: prompt.trim(),
+                prompt: p,
                 negativePrompt: negative.trim() || undefined,
                 imageSize: dims,
                 numImages,
                 refImageUrls,
                 inputFiles: adhocFiles,
+                loraUrl: j.loraUrl,
               },
               user.id,
             )
@@ -206,7 +256,7 @@ export default function Studio({ user, onGoProfile }) {
         }
       }),
     )
-    const order = selModels.map((j) => j.id)
+    const order = jobs.map((j) => j.id)
     groups.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
     setResults(groups)
     if (errs.length) setError(errs.join('\n'))
@@ -269,6 +319,67 @@ export default function Studio({ user, onGoProfile }) {
           ))}
         </div>
       </div>
+
+      {mode === 'txt2img' && (
+        <div className="ollama-box">
+          <div className="ollama-body">
+            <div className="field">
+              <label>캐릭터 (LoRA) — 인물 고정</label>
+              <div className="field-row">
+                <select value={selectedChar} onChange={(e) => setSelectedChar(e.target.value)}>
+                  <option value="">없음</option>
+                  {characters.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedChar && (
+                  <button className="example-toggle" onClick={() => removeChar(selectedChar)}>
+                    삭제
+                  </button>
+                )}
+              </div>
+              <span className="hint">
+                선택 시 Z-Image가 그 인물로 고정 생성됩니다(모델 선택 무시).
+              </span>
+            </div>
+            <button className="example-toggle" onClick={() => setShowTrain((s) => !s)}>
+              ＋ 새 캐릭터 학습 {showTrain ? '▲' : '▼'}
+            </button>
+            {showTrain && (
+              <div className="builder-fields">
+                <div className="field">
+                  <label>캐릭터 이름</label>
+                  <input value={charName} onChange={(e) => setCharName(e.target.value)} placeholder="예: yuna" />
+                </div>
+                <div className="field">
+                  <label>트리거 문구 (선택)</label>
+                  <input
+                    value={charTrigger}
+                    onChange={(e) => setCharTrigger(e.target.value)}
+                    placeholder="예: yuna woman"
+                  />
+                </div>
+                <div className="field">
+                  <label>학습 이미지 (10장+ 권장 · 동일 인물 · 노출 없는 컷)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => setTrainFiles([...e.target.files])}
+                  />
+                  {trainFiles.length > 0 && <span className="hint">{trainFiles.length}장 선택됨</span>}
+                </div>
+                <button className="builder-btn" disabled={training} onClick={trainNow}>
+                  {training ? '학습 중… (수 분)' : '학습 시작'}
+                </button>
+                {trainStatus && <p className="hint">{trainStatus}</p>}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {mode === 'txt2img' && selectedTxt.includes('comfy') && (
         <div className="ollama-box">
