@@ -9,21 +9,33 @@ const MODES = [
 ]
 
 const RATIOS = [
-  { id: '1:1', label: '정사각 1:1', w: 1024, h: 1024 },
-  { id: '3:4', label: '세로 3:4', w: 960, h: 1280 },
-  { id: '9:16', label: '세로 9:16', w: 720, h: 1280 },
-  { id: '4:3', label: '가로 4:3', w: 1280, h: 960 },
-  { id: '16:9', label: '가로 16:9', w: 1280, h: 720 },
-  { id: 'custom', label: '직접 입력', w: 1024, h: 1024 },
+  { id: '1:1', label: '정사각 1:1', aw: 1, ah: 1 },
+  { id: '3:4', label: '세로 3:4', aw: 3, ah: 4 },
+  { id: '9:16', label: '세로 9:16', aw: 9, ah: 16 },
+  { id: '4:3', label: '가로 4:3', aw: 4, ah: 3 },
+  { id: '16:9', label: '가로 16:9', aw: 16, ah: 9 },
 ]
+
+const QUALITIES = [
+  { id: 'standard', label: '표준 (1K)', long: 1024 },
+  { id: 'high', label: '고화질 (1.5K)', long: 1536 },
+  { id: 'max', label: '최고 (2K)', long: 1792 },
+]
+
+function computeDims(ratioId, longSide) {
+  const r = RATIOS.find((x) => x.id === ratioId) || RATIOS[0]
+  const max = Math.max(r.aw, r.ah)
+  const w = Math.round((longSide * (r.aw / max)) / 8) * 8
+  const h = Math.round((longSide * (r.ah / max)) / 8) * 8
+  return { width: w, height: h }
+}
 
 export default function Studio({ user, onGoGallery }) {
   const [mode, setMode] = useState('txt2img')
   const [prompt, setPrompt] = useState('')
   const [negative, setNegative] = useState('')
   const [ratio, setRatio] = useState('1:1')
-  const [customW, setCustomW] = useState(1024)
-  const [customH, setCustomH] = useState(1024)
+  const [quality, setQuality] = useState('standard')
   const [numImages, setNumImages] = useState(1)
   const [strength, setStrength] = useState(0.75)
   const [inputFile, setInputFile] = useState(null)
@@ -40,13 +52,8 @@ export default function Studio({ user, onGoGallery }) {
   const [saveMsg, setSaveMsg] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const dims =
-    ratio === 'custom'
-      ? { width: Number(customW) || 1024, height: Number(customH) || 1024 }
-      : (() => {
-          const r = RATIOS.find((x) => x.id === ratio)
-          return { width: r.w, height: r.h }
-        })()
+  const longSide = (QUALITIES.find((q) => q.id === quality) || QUALITIES[0]).long
+  const dims = computeDims(ratio, longSide)
   const mp = (dims.width * dims.height) / 1_000_000
   const estWon = Math.round(mp * 0.005 * numImages * 1350)
 
@@ -138,44 +145,30 @@ export default function Studio({ user, onGoGallery }) {
 
       {mode === 'txt2img' && (
         <>
-          <div className="field">
-            <label>이미지 비율</label>
-            <select value={ratio} onChange={(e) => setRatio(e.target.value)}>
-              {RATIOS.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.label}
-                  {r.id !== 'custom' ? ` (${r.w}×${r.h})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-          {ratio === 'custom' && (
-            <div className="field-row">
-              <div className="field">
-                <label>가로 (px)</label>
-                <input
-                  type="number"
-                  min="256"
-                  max="2048"
-                  value={customW}
-                  onChange={(e) => setCustomW(e.target.value)}
-                />
-              </div>
-              <div className="field">
-                <label>세로 (px)</label>
-                <input
-                  type="number"
-                  min="256"
-                  max="2048"
-                  value={customH}
-                  onChange={(e) => setCustomH(e.target.value)}
-                />
-              </div>
+          <div className="field-row">
+            <div className="field">
+              <label>이미지 비율</label>
+              <select value={ratio} onChange={(e) => setRatio(e.target.value)}>
+                {RATIOS.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+            <div className="field">
+              <label>화질</label>
+              <select value={quality} onChange={(e) => setQuality(e.target.value)}>
+                {QUALITIES.map((q) => (
+                  <option key={q.id} value={q.id}>
+                    {q.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <span className="hint">
             {dims.width}×{dims.height} · 약 {mp.toFixed(2)}MP · 예상 약 {estWon}원 ({numImages}장)
-            {mp > 4 && ' · ⚠️ fal 최대 약 4MP'}
           </span>
         </>
       )}
