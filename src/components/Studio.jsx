@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { generate } from '../lib/falClient.js'
 import { addDraft } from '../lib/drafts.js'
 import { downloadUrl } from '../lib/download.js'
-import { listRefs, addRef, deleteRef, refToFile } from '../lib/refs.js'
+import { listRefs, addRef, deleteRef } from '../lib/refs.js'
 
 const MODES = [
   { id: 'txt2img', label: 'Txt → Img' },
@@ -76,16 +76,9 @@ export default function Studio({ user, onGoProfile }) {
     selModels.reduce((s, m) => s + (m.flat != null ? m.flat : mp * m.perMp), 0) * numImages
   const estWon = Math.round(totalUsd * 1350)
 
-  const refUrls = useMemo(() => {
-    const map = {}
-    savedRefs.forEach((r) => (map[r.id] = URL.createObjectURL(r.blob)))
-    return map
-  }, [savedRefs])
-  useEffect(() => () => Object.values(refUrls).forEach((u) => URL.revokeObjectURL(u)), [refUrls])
-
   useEffect(() => {
-    listRefs().then(setSavedRefs)
-  }, [])
+    listRefs(user.id).then(setSavedRefs).catch(() => {})
+  }, [user.id])
 
   useEffect(() => () => refItems.forEach((it) => URL.revokeObjectURL(it.url)), []) // eslint-disable-line
 
@@ -114,23 +107,23 @@ export default function Studio({ user, onGoProfile }) {
   async function addSavedRefs(e) {
     const picked = [...e.target.files]
     e.target.value = ''
-    for (const f of picked) {
-      await addRef({ id: crypto.randomUUID(), name: f.name, type: f.type, blob: f, createdAt: Date.now() })
+    setError('')
+    try {
+      for (const f of picked) await addRef(f, user.id)
+      setSavedRefs(await listRefs(user.id))
+    } catch (err) {
+      setError(`레퍼런스 저장 실패: ${err.message}`)
     }
-    setSavedRefs(await listRefs())
   }
-  async function removeSavedRef(id) {
-    await deleteRef(id)
-    setSavedRefs(await listRefs())
-    setSelectedRefIds((prev) => prev.filter((x) => x !== id))
+  async function removeSavedRef(path) {
+    await deleteRef(path)
+    setSavedRefs(await listRefs(user.id))
+    setSelectedRefIds((prev) => prev.filter((x) => x !== path))
   }
-  function toggleSavedRef(id) {
-    setSelectedRefIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
-
-  function imgInputFiles() {
-    const saved = savedRefs.filter((r) => selectedRefIds.includes(r.id)).map(refToFile)
-    return [...saved, ...refItems.map((it) => it.file)]
+  function toggleSavedRef(path) {
+    setSelectedRefIds((prev) =>
+      prev.includes(path) ? prev.filter((x) => x !== path) : [...prev, path],
+    )
   }
 
   async function autoSaveDraft(images, autoTitle, autoTools) {
@@ -154,8 +147,9 @@ export default function Studio({ user, onGoProfile }) {
 
   async function run() {
     if (!prompt.trim()) return setError('프롬프트를 입력하세요.')
-    const inputFiles = mode === 'img2img' ? imgInputFiles() : []
-    if (mode === 'img2img' && inputFiles.length === 0)
+    const refImageUrls = savedRefs.filter((r) => selectedRefIds.includes(r.path)).map((r) => r.url)
+    const adhocFiles = refItems.map((it) => it.file)
+    if (mode === 'img2img' && refImageUrls.length + adhocFiles.length === 0)
       return setError('참조 이미지를 1장 이상 선택하세요. (저장된 레퍼런스 또는 업로드)')
     if (selModels.length === 0) return setError('모델을 1개 이상 선택하세요.')
     setError('')
@@ -178,7 +172,8 @@ export default function Studio({ user, onGoProfile }) {
               negativePrompt: negative.trim() || undefined,
               imageSize: dims,
               numImages,
-              inputFiles,
+              refImageUrls,
+              inputFiles: adhocFiles,
             },
             user.id,
           )
@@ -287,21 +282,21 @@ export default function Studio({ user, onGoProfile }) {
               <div className="edit-media">
                 {savedRefs.map((r) => (
                   <div
-                    key={r.id}
-                    className={`edit-thumb ref-thumb ${selectedRefIds.includes(r.id) ? 'sel' : ''}`}
-                    onClick={() => toggleSavedRef(r.id)}
+                    key={r.path}
+                    className={`edit-thumb ref-thumb ${selectedRefIds.includes(r.path) ? 'sel' : ''}`}
+                    onClick={() => toggleSavedRef(r.path)}
                   >
-                    <img src={refUrls[r.id]} alt="" />
+                    <img src={r.url} alt="" />
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        removeSavedRef(r.id)
+                        removeSavedRef(r.path)
                       }}
                     >
                       ✕
                     </button>
-                    {selectedRefIds.includes(r.id) && <span className="ref-check">✓</span>}
+                    {selectedRefIds.includes(r.path) && <span className="ref-check">✓</span>}
                   </div>
                 ))}
               </div>
@@ -310,7 +305,9 @@ export default function Studio({ user, onGoProfile }) {
               ＋ 레퍼런스 저장
               <input type="file" accept="image/*" multiple hidden onChange={addSavedRefs} />
             </label>
-            <span className="hint">탭하면 선택(✓), ✕로 삭제. 선택한 레퍼런스가 이번 생성에 사용됩니다.</span>
+            <span className="hint">
+              서버에 저장 → 기기 바꿔도 유지. 탭하면 선택(✓), ✕로 삭제.
+            </span>
           </div>
 
           <div className="field">

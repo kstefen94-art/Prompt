@@ -22,11 +22,13 @@ export async function generate(params, userId) {
     imageSize: params.imageSize,
     numImages: params.numImages,
   }
-  if (params.mode === 'img2img' && params.inputFiles?.length) {
-    payload.imageUrls = []
-    for (const f of params.inputFiles) {
-      payload.imageUrls.push(await uploadInput(f, userId))
+  if (params.mode === 'img2img') {
+    // 저장된 레퍼런스는 이미 공개 URL이라 그대로 사용, 1회용 업로드만 새로 올림
+    const urls = [...(params.refImageUrls || [])]
+    for (const f of params.inputFiles || []) {
+      urls.push(await uploadInput(f, userId))
     }
+    payload.imageUrls = urls
   }
 
   const res = await fetch('/api/generate', {
