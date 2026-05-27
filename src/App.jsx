@@ -76,8 +76,11 @@ export default function App() {
           />
         )}
         {activeTab === 'generator' && <Generator onViewWorks={viewWorks} />}
-        {activeTab === 'studio' && auth.user && (
-          <Studio user={auth.user} onGoProfile={() => setTab('profile')} />
+        {/* 제작 탭은 항상 마운트해두고 화면에서만 숨김 → 탭 이동해도 상태·실행 유지 */}
+        {auth.user && (
+          <div style={{ display: activeTab === 'studio' ? 'block' : 'none' }}>
+            <Studio user={auth.user} onGoProfile={() => setTab('profile')} />
+          </div>
         )}
         {activeTab === 'profile' && (
           <div className="profile">
