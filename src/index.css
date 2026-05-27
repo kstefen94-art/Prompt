@@ -11,6 +11,73 @@
   --code-bg: #efe8df;
   --radius: 16px;
   --shadow: 0 1px 2px rgba(60, 40, 20, 0.04), 0 10px 26px rgba(60, 40, 20, 0.06);
+  --bar-bg: rgba(244, 236, 228, 0.9);
+  --media-bg: #ffffff;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Apple SD Gothic Neo',
+    'Malgun Gothic', sans-serif;
+}
+
+/* ===== 디자인 키트 후보 (data-theme) ===== */
+[data-theme='minimal'] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --border: #ececf1;
+  --text: #15151b;
+  --muted: #6c6c78;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef0ff;
+  --code-bg: #f4f5fa;
+  --media-bg: #f4f5f8;
+  --bar-bg: rgba(255, 255, 255, 0.85);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+}
+[data-theme='dark'] {
+  --bg: #0e0f13;
+  --surface: #16181f;
+  --card: #171a22;
+  --border: #272b36;
+  --text: #eef0f5;
+  --muted: #99a0b0;
+  --accent: #22d3ee;
+  --accent-hover: #0ea5c4;
+  --accent-soft: #0f2a33;
+  --code-bg: #0b0c10;
+  --media-bg: #0b0c10;
+  --bar-bg: rgba(14, 15, 19, 0.85);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+[data-theme='gradient'] {
+  --bg: #faf7ff;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --border: #ece6f7;
+  --text: #1f1430;
+  --muted: #7a6e90;
+  --accent: #a21caf;
+  --accent-hover: #86198f;
+  --accent-soft: #fbe8fb;
+  --code-bg: #f6f0fb;
+  --media-bg: #f5f0fb;
+  --bar-bg: rgba(250, 247, 255, 0.85);
+  --shadow: 0 1px 2px rgba(80, 30, 120, 0.06), 0 10px 26px rgba(120, 40, 160, 0.12);
+}
+[data-theme='editorial'] {
+  --bg: #f6f4ef;
+  --surface: #fffdf9;
+  --card: #fffdf9;
+  --border: #e3ded3;
+  --text: #1a1a18;
+  --muted: #7a766c;
+  --accent: #111111;
+  --accent-hover: #333333;
+  --accent-soft: #eceae3;
+  --code-bg: #efece4;
+  --media-bg: #efece4;
+  --bar-bg: rgba(246, 244, 239, 0.9);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 22px rgba(0, 0, 0, 0.07);
+  --font: Georgia, 'Times New Roman', 'Apple SD Gothic Neo', serif;
 }
 
 * {
@@ -24,8 +91,7 @@ body {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Apple SD Gothic Neo',
-    'Malgun Gothic', sans-serif;
+  font-family: var(--font);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
@@ -51,7 +117,7 @@ code {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(244, 236, 228, 0.9);
+  background: var(--bar-bg);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
 }
@@ -98,7 +164,7 @@ code {
   right: 0;
   z-index: 30;
   display: flex;
-  background: rgba(251, 247, 242, 0.95);
+  background: var(--bar-bg);
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--border);
   padding: 8px 0 max(8px, env(safe-area-inset-bottom));
@@ -554,13 +620,13 @@ code {
 .photo-media {
   position: relative;
   aspect-ratio: 1 / 1;
-  background: #fff;
+  background: var(--media-bg);
 }
 .cover {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #fff;
+  background: var(--media-bg);
   display: block;
 }
 .photo-badges {
@@ -831,6 +897,22 @@ code {
   font-size: 0.68rem;
   padding: 2px 6px;
 }
+.ref-idx {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
 
 /* 제작(Studio) 탭 */
 .studio {
@@ -1001,6 +1083,56 @@ code {
   flex: 0 0 auto;
   width: auto;
   padding: 10px 14px;
+}
+
+/* ---------- Theme picker ---------- */
+.theme-kit {
+  max-width: 640px;
+  margin: 24px auto 0;
+  text-align: left;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.theme-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: left;
+}
+.theme-card.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.theme-swatch {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+.theme-swatch span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+.theme-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+.theme-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 /* ---------- Profile / empty ---------- */

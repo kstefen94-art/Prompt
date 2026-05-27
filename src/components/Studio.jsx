@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { templates } from '../data/templates.js'
 import { generate } from '../lib/falClient.js'
 import { addDraft } from '../lib/drafts.js'
@@ -39,7 +39,8 @@ export default function Studio({ user, onGoProfile }) {
   const [ratio, setRatio] = useState('1:1')
   const [quality, setQuality] = useState('standard')
   const [numImages, setNumImages] = useState(1)
-  const [inputFile, setInputFile] = useState(null)
+  // img2img 참조 이미지(여러 장): { id, file, url }
+  const [refItems, setRefItems] = useState([])
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -58,9 +59,31 @@ export default function Studio({ user, onGoProfile }) {
   const mp = (dims.width * dims.height) / 1_000_000
   const estWon = Math.round(mp * 0.005 * numImages * 1350)
 
+  useEffect(() => {
+    return () => refItems.forEach((it) => URL.revokeObjectURL(it.url))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function addRefs(e) {
+    const picked = [...e.target.files]
+    e.target.value = ''
+    setRefItems((prev) => [
+      ...prev,
+      ...picked.map((file) => ({ id: crypto.randomUUID(), file, url: URL.createObjectURL(file) })),
+    ])
+  }
+  function removeRef(id) {
+    setRefItems((prev) => {
+      const t = prev.find((it) => it.id === id)
+      if (t) URL.revokeObjectURL(t.url)
+      return prev.filter((it) => it.id !== id)
+    })
+  }
+
   async function run() {
     if (!prompt.trim()) return setError('프롬프트를 입력하세요.')
-    if (mode === 'img2img' && !inputFile) return setError('입력 이미지를 선택하세요.')
+    if (mode === 'img2img' && refItems.length === 0)
+      return setError('참조 이미지를 1장 이상 선택하세요.')
     setError('')
     setSaveMsg('')
     setBusy(true)
@@ -73,7 +96,7 @@ export default function Studio({ user, onGoProfile }) {
           negativePrompt: negative.trim() || undefined,
           imageSize: dims,
           numImages,
-          inputFile,
+          inputFiles: refItems.map((it) => it.file),
         },
         user.id,
       )
@@ -144,7 +167,7 @@ export default function Studio({ user, onGoProfile }) {
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={
             mode === 'img2img'
-              ? '수정 지시 예: 셔츠를 파란색으로 바꿔줘 / 배경을 노을로 바꿔줘'
+              ? '예: 이미지1 인물에 이미지2의 옷을 입혀줘 / 셔츠를 파란색으로 바꿔줘'
               : '예: a close-up portrait of a woman, golden hour, film grain'
           }
         />
@@ -182,9 +205,24 @@ export default function Studio({ user, onGoProfile }) {
 
       {mode === 'img2img' && (
         <div className="field">
-          <label>편집할 이미지 *</label>
-          <input type="file" accept="image/*" onChange={(e) => setInputFile(e.target.files[0])} />
-          <span className="hint">FLUX Kontext · 지시문대로 편집 · 약 54원/장</span>
+          <label>참조 이미지 (여러 장 가능) *</label>
+          <input type="file" accept="image/*" multiple onChange={addRefs} />
+          <span className="hint">
+            FLUX Kontext 멀티 참조 · 여러 장을 넣고 "이미지1에 이미지2의 옷을 입혀줘"처럼 지시
+          </span>
+          {refItems.length > 0 && (
+            <div className="edit-media">
+              {refItems.map((it, i) => (
+                <div key={it.id} className="edit-thumb">
+                  <img src={it.url} alt="" />
+                  <button type="button" onClick={() => removeRef(it.id)}>
+                    ✕
+                  </button>
+                  <span className="ref-idx">{i + 1}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

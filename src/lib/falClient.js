@@ -21,8 +21,12 @@ export async function generate(params, userId) {
     imageSize: params.imageSize,
     numImages: params.numImages,
   }
-  if (params.mode === 'img2img' && params.inputFile)
-    payload.imageUrl = await uploadInput(params.inputFile, userId)
+  if (params.mode === 'img2img' && params.inputFiles?.length) {
+    payload.imageUrls = []
+    for (const f of params.inputFiles) {
+      payload.imageUrls.push(await uploadInput(f, userId))
+    }
+  }
 
   const res = await fetch('/api/generate', {
     method: 'POST',

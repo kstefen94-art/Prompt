@@ -22,11 +22,11 @@ const MODELS = {
     }),
   },
   img2img: {
-    // FLUX Kontext: 지시문 기반 이미지 편집 (strength 개념 없음)
-    id: 'fal-ai/flux-pro/kontext',
+    // FLUX Kontext (멀티 참조): 여러 이미지 + 지시문 기반 편집/합성
+    id: 'fal-ai/flux-pro/kontext/max/multi',
     build: (p) => ({
       prompt: p.prompt,
-      image_url: p.imageUrl,
+      image_urls: p.imageUrls,
       num_images: p.numImages || 1,
     }),
   },
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
   const model = MODELS[body.mode]
   if (!model) return res.status(400).json({ error: '알 수 없는 모드입니다.' })
   if (!body.prompt) return res.status(400).json({ error: '프롬프트가 필요합니다.' })
-  if (body.mode === 'img2img' && !body.imageUrl)
+  if (body.mode === 'img2img' && !(body.imageUrls && body.imageUrls.length))
     return res.status(400).json({ error: '입력 이미지가 필요합니다.' })
 
   const input = model.build(body)
