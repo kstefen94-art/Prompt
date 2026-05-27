@@ -20,6 +20,7 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(ALL)
   const [sort, setSort] = useState('latest')
+  const [mediaFilter, setMediaFilter] = useState('all') // all | photo | video
   const [favsOnly, setFavsOnly] = useState(false)
   const [favs, setFavs] = useState(loadFavs)
   const [opened, setOpened] = useState(null)
@@ -61,6 +62,9 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
       if (filterTemplateId && w.templateId !== filterTemplateId) return false
       if (favsOnly && !favs.has(w.no)) return false
       if (category !== ALL && !w.categories.includes(category)) return false
+      const hasVideo = w.media.some((m) => m.type === 'video')
+      if (mediaFilter === 'photo' && hasVideo) return false
+      if (mediaFilter === 'video' && !hasVideo) return false
       if (!q) return true
       return (
         w.title.toLowerCase().includes(q) ||
@@ -73,7 +77,7 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
       if (sort === 'promptLen') return b.prompt.length - a.prompt.length
       return new Date(b.createdAt) - new Date(a.createdAt)
     })
-  }, [works, query, category, sort, favsOnly, favs, filterTemplateId])
+  }, [works, query, category, sort, mediaFilter, favsOnly, favs, filterTemplateId])
 
   return (
     <div className="gallery">
@@ -120,6 +124,15 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
+        <select
+          value={mediaFilter}
+          onChange={(e) => setMediaFilter(e.target.value)}
+          className="g-sort"
+        >
+          <option value="all">전체</option>
+          <option value="photo">사진</option>
+          <option value="video">영상</option>
+        </select>
         <select value={sort} onChange={(e) => setSort(e.target.value)} className="g-sort">
           <option value="latest">최신순</option>
           <option value="promptLen">프롬프트 길이</option>
