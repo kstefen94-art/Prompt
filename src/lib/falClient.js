@@ -24,8 +24,6 @@ export async function generate(params, userId) {
   }
   if (params.mode === 'img2img' && params.inputFile)
     payload.imageUrl = await uploadInput(params.inputFile, userId)
-  if (params.mode === 'face' && params.faceFile)
-    payload.faceImageUrl = await uploadInput(params.faceFile, userId)
 
   const res = await fetch('/api/generate', {
     method: 'POST',

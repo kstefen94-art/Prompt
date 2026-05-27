@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { templates } from '../data/templates.js'
 import { generate } from '../lib/falClient.js'
 import { addDraft } from '../lib/drafts.js'
+import { downloadUrl } from '../lib/download.js'
 import ToolPicker from './ToolPicker.jsx'
 
 const MODES = [
   { id: 'txt2img', label: 'Txt → Img' },
   { id: 'img2img', label: 'Img → Img' },
-  { id: 'face', label: '얼굴 레퍼런스' },
 ]
 
 const RATIOS = [
@@ -41,7 +41,6 @@ export default function Studio({ user, onGoProfile }) {
   const [numImages, setNumImages] = useState(1)
   const [strength, setStrength] = useState(0.75)
   const [inputFile, setInputFile] = useState(null)
-  const [faceFile, setFaceFile] = useState(null)
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -63,7 +62,6 @@ export default function Studio({ user, onGoProfile }) {
   async function run() {
     if (!prompt.trim()) return setError('프롬프트를 입력하세요.')
     if (mode === 'img2img' && !inputFile) return setError('입력 이미지를 선택하세요.')
-    if (mode === 'face' && !faceFile) return setError('얼굴 이미지를 선택하세요.')
     setError('')
     setSaveMsg('')
     setBusy(true)
@@ -78,12 +76,11 @@ export default function Studio({ user, onGoProfile }) {
           numImages,
           strength,
           inputFile,
-          faceFile,
         },
         user.id,
       )
       setResults(images)
-      setTools([mode === 'face' ? 'IP-Adapter FaceID' : 'fal Z-Image'])
+      setTools(['fal Z-Image'])
       if (!title) setTitle(prompt.trim().slice(0, 20))
     } catch (e) {
       setError(e.message)
@@ -147,11 +144,7 @@ export default function Studio({ user, onGoProfile }) {
           rows={3}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder={
-            mode === 'face'
-              ? '예: a portrait in a sunlit cafe, cinematic lighting'
-              : '예: a close-up portrait of a woman, golden hour, film grain'
-          }
+          placeholder="예: a close-up portrait of a woman, golden hour, film grain"
         />
       </div>
 
@@ -205,14 +198,6 @@ export default function Studio({ user, onGoProfile }) {
         </>
       )}
 
-      {mode === 'face' && (
-        <div className="field">
-          <label>얼굴 레퍼런스 이미지 *</label>
-          <input type="file" accept="image/*" onChange={(e) => setFaceFile(e.target.files[0])} />
-          <span className="hint">동의받은 본인/대상의 얼굴 사진만 사용하세요.</span>
-        </div>
-      )}
-
       <div className="field">
         <label>제외할 요소 (negative prompt, 선택)</label>
         <input value={negative} onChange={(e) => setNegative(e.target.value)} placeholder="예: blurry, low quality, extra fingers" />
@@ -240,7 +225,15 @@ export default function Studio({ user, onGoProfile }) {
         <div className="studio-out">
           <div className="studio-results">
             {results.map((url, i) => (
-              <img key={i} src={url} alt="" />
+              <div key={i} className="studio-result">
+                <img src={url} alt="" />
+                <button
+                  className="result-dl"
+                  onClick={() => downloadUrl(url, `${title || 'image'}-${i + 1}`)}
+                >
+                  ⬇ 다운로드
+                </button>
+              </div>
             ))}
           </div>
           <div className="save-form">

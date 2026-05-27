@@ -851,11 +851,44 @@ code {
   gap: 10px;
   margin-bottom: 16px;
 }
-.studio-results img {
+.studio-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.studio-result img {
   width: 100%;
   border-radius: 12px;
   border: 1px solid var(--border);
   display: block;
+}
+.result-dl {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 7px;
+  border-radius: 8px;
+}
+.result-dl:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.download-btn {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 11px;
+  border-radius: 10px;
+  margin-top: 6px;
+}
+.download-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .save-form h3 {
   margin: 0 0 12px;

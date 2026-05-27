@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { downloadUrl } from '../lib/download.js'
 
 function Media({ item }) {
   if (item.type === 'video') {
@@ -88,6 +89,13 @@ export default function GalleryLightbox({ work, favorite, onToggleFav, onClose, 
               <span key={t} className="tool-tag">🛠 {t}</span>
             ))}
           </div>
+          <button
+            className="download-btn"
+            onClick={() => downloadUrl(work.media[idx].src, `${work.title || 'image'}-${idx + 1}`)}
+          >
+            ⬇ 이 사진 다운로드
+          </button>
+
           <div className="lb-prompt-head">
             <span>프롬프트</span>
             <button className="mini-copy" onClick={copyPrompt}>

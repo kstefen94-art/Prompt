@@ -31,16 +31,6 @@ const MODELS = {
       negative_prompt: p.negativePrompt || undefined,
     }),
   },
-  face: {
-    // fal에는 InstantID 슬러그가 없어, 동일하게 얼굴 일관성을 주는 IP-Adapter Face ID 사용.
-    id: 'fal-ai/ip-adapter-face-id',
-    build: (p) => ({
-      prompt: p.prompt,
-      face_image_url: p.faceImageUrl,
-      negative_prompt: p.negativePrompt || undefined,
-      num_samples: p.numImages || 1,
-    }),
-  },
 }
 
 async function verifyUser(token) {
@@ -77,8 +67,6 @@ export default async function handler(req, res) {
   if (!body.prompt) return res.status(400).json({ error: '프롬프트가 필요합니다.' })
   if (body.mode === 'img2img' && !body.imageUrl)
     return res.status(400).json({ error: '입력 이미지가 필요합니다.' })
-  if (body.mode === 'face' && !body.faceImageUrl)
-    return res.status(400).json({ error: '얼굴 이미지가 필요합니다.' })
 
   const input = model.build(body)
   Object.keys(input).forEach((k) => input[k] === undefined && delete input[k])
