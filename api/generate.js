@@ -22,13 +22,12 @@ const MODELS = {
     }),
   },
   img2img: {
-    id: 'fal-ai/z-image/turbo/image-to-image',
+    // FLUX Kontext: 지시문 기반 이미지 편집 (strength 개념 없음)
+    id: 'fal-ai/flux-pro/kontext',
     build: (p) => ({
       prompt: p.prompt,
       image_url: p.imageUrl,
-      strength: p.strength ?? 0.75,
       num_images: p.numImages || 1,
-      negative_prompt: p.negativePrompt || undefined,
     }),
   },
 }

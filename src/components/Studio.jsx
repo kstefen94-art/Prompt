@@ -39,7 +39,6 @@ export default function Studio({ user, onGoProfile }) {
   const [ratio, setRatio] = useState('1:1')
   const [quality, setQuality] = useState('standard')
   const [numImages, setNumImages] = useState(1)
-  const [strength, setStrength] = useState(0.75)
   const [inputFile, setInputFile] = useState(null)
 
   const [busy, setBusy] = useState(false)
@@ -74,13 +73,12 @@ export default function Studio({ user, onGoProfile }) {
           negativePrompt: negative.trim() || undefined,
           imageSize: dims,
           numImages,
-          strength,
           inputFile,
         },
         user.id,
       )
       setResults(images)
-      setTools(['fal Z-Image'])
+      setTools([mode === 'img2img' ? 'FLUX Kontext' : 'fal Z-Image'])
       if (!title) setTitle(prompt.trim().slice(0, 20))
     } catch (e) {
       setError(e.message)
@@ -144,7 +142,11 @@ export default function Studio({ user, onGoProfile }) {
           rows={3}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="예: a close-up portrait of a woman, golden hour, film grain"
+          placeholder={
+            mode === 'img2img'
+              ? '수정 지시 예: 셔츠를 파란색으로 바꿔줘 / 배경을 노을로 바꿔줘'
+              : '예: a close-up portrait of a woman, golden hour, film grain'
+          }
         />
       </div>
 
@@ -179,23 +181,11 @@ export default function Studio({ user, onGoProfile }) {
       )}
 
       {mode === 'img2img' && (
-        <>
-          <div className="field">
-            <label>입력 이미지 *</label>
-            <input type="file" accept="image/*" onChange={(e) => setInputFile(e.target.files[0])} />
-          </div>
-          <div className="field">
-            <label>변형 강도: {strength}</label>
-            <input
-              type="range"
-              min="0.1"
-              max="1"
-              step="0.05"
-              value={strength}
-              onChange={(e) => setStrength(Number(e.target.value))}
-            />
-          </div>
-        </>
+        <div className="field">
+          <label>편집할 이미지 *</label>
+          <input type="file" accept="image/*" onChange={(e) => setInputFile(e.target.files[0])} />
+          <span className="hint">FLUX Kontext · 지시문대로 편집 · 약 54원/장</span>
+        </div>
       )}
 
       <div className="field">

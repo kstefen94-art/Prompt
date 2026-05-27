@@ -20,7 +20,6 @@ export async function generate(params, userId) {
     negativePrompt: params.negativePrompt,
     imageSize: params.imageSize,
     numImages: params.numImages,
-    strength: params.strength,
   }
   if (params.mode === 'img2img' && params.inputFile)
     payload.imageUrl = await uploadInput(params.inputFile, userId)
