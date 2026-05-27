@@ -7,7 +7,8 @@ export default function UploadModal({ userId, onClose, onDone }) {
   const [categories, setCategories] = useState('')
   const [templateId, setTemplateId] = useState('')
   const [prompt, setPrompt] = useState('')
-  const [files, setFiles] = useState([])
+  // 고른 파일 목록: { id, file, url(미리보기), isVideo }
+  const [items, setItems] = useState([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -23,9 +24,37 @@ export default function UploadModal({ userId, onClose, onDone }) {
     }
   }, [onClose, busy])
 
+  // 컴포넌트 종료 시 미리보기 URL 정리
+  useEffect(() => {
+    return () => items.forEach((it) => URL.revokeObjectURL(it.url))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function addFiles(e) {
+    const picked = [...e.target.files]
+    e.target.value = '' // 같은 파일 다시 고를 수 있게 초기화
+    setItems((prev) => [
+      ...prev,
+      ...picked.map((file) => ({
+        id: crypto.randomUUID(),
+        file,
+        url: URL.createObjectURL(file),
+        isVideo: file.type.startsWith('video'),
+      })),
+    ])
+  }
+
+  function removeItem(id) {
+    setItems((prev) => {
+      const target = prev.find((it) => it.id === id)
+      if (target) URL.revokeObjectURL(target.url)
+      return prev.filter((it) => it.id !== id)
+    })
+  }
+
   async function submit() {
     if (!title.trim()) return setError('제목을 입력하세요.')
-    if (!files.length) return setError('이미지 또는 영상을 1개 이상 선택하세요.')
+    if (!items.length) return setError('올릴 이미지/영상을 1개 이상 선택하세요.')
     setError('')
     setBusy(true)
     try {
@@ -38,7 +67,7 @@ export default function UploadModal({ userId, onClose, onDone }) {
             .filter(Boolean),
           templateId,
           prompt: prompt.trim(),
-          files,
+          files: items.map((it) => it.file),
         },
         userId,
       )
@@ -57,7 +86,7 @@ export default function UploadModal({ userId, onClose, onDone }) {
         </button>
         <div className="builder-head">
           <h2>＋ 작품 추가</h2>
-          <p>이미지·영상을 올리고 정보를 입력하세요.</p>
+          <p>파일을 고른 뒤, 올릴 것만 남기고 ✕로 빼면 됩니다.</p>
         </div>
 
         <div className="builder-fields" style={{ marginTop: 18 }}>
@@ -94,21 +123,34 @@ export default function UploadModal({ userId, onClose, onDone }) {
             />
           </div>
           <div className="field">
-            <label>이미지 / 영상 (여러 개 가능) *</label>
-            <input
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              onChange={(e) => setFiles([...e.target.files])}
-            />
-            {files.length > 0 && <span className="hint">{files.length}개 선택됨</span>}
+            <label>이미지 / 영상 선택 *</label>
+            <input type="file" accept="image/*,video/*" multiple onChange={addFiles} />
+            {items.length > 0 && (
+              <>
+                <span className="hint">{items.length}개 선택됨 · 올리고 싶지 않은 건 ✕</span>
+                <div className="edit-media">
+                  {items.map((it) => (
+                    <div key={it.id} className="edit-thumb">
+                      {it.isVideo ? (
+                        <video src={it.url} muted preload="metadata" />
+                      ) : (
+                        <img src={it.url} alt="" />
+                      )}
+                      <button type="button" onClick={() => removeItem(it.id)}>
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {error && <p className="error-text">{error}</p>}
 
         <button className="builder-btn full" onClick={submit} disabled={busy}>
-          {busy ? '업로드 중…' : '작품 올리기'}
+          {busy ? '업로드 중…' : `작품 올리기${items.length ? ` (${items.length}개)` : ''}`}
         </button>
       </div>
     </div>
