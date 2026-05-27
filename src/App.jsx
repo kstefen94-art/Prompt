@@ -4,6 +4,7 @@ import Generator from './components/Generator.jsx'
 import Drafts from './components/Drafts.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 import TabIcon from './components/TabIcon.jsx'
+import Splash from './components/Splash.jsx'
 import { useAuth } from './lib/useAuth.js'
 
 // 무거운 제작(Studio)은 지연 로딩 → 갤러리 방문자는 가벼운 번들만 받음
@@ -20,6 +21,7 @@ export default function App() {
   const auth = useAuth()
   const [tab, setTab] = useState('gallery')
   const [templateFilter, setTemplateFilter] = useState(null)
+  const [splash, setSplash] = useState(true)
 
   function viewWorks(templateId) {
     setTemplateFilter(templateId)
@@ -40,6 +42,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {splash && <Splash onDone={() => setSplash(false)} />}
       <header className="topbar">
         <div className="topbar-inner">
           <div className="brand">

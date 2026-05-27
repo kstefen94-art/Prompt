@@ -58,6 +58,46 @@ code {
   padding-bottom: 76px;
 }
 
+/* ---------- 인트로 스플래시 ---------- */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.55s ease;
+}
+.splash--leave {
+  opacity: 0;
+  pointer-events: none;
+}
+.splash-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: splashIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.splash-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+@keyframes splashIn {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .topbar {
   position: sticky;
   top: 0;
