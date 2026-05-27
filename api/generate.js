@@ -10,9 +10,11 @@ const SUPABASE_KEY =
   'sb_publishable_-w2GUQw5gMgEYQob2s3iDA_Tke1XZr1'
 
 // 모델 슬러그/입력 스키마는 fal 모델 페이지 기준입니다.
-// InstantID 슬러그가 맞지 않으면(예: 404) 아래 face.id 값만 바꾸면 됩니다.
-const MODELS = {
-  txt2img: {
+// 슬러그가 맞지 않으면(예: 404) 아래 id 값만 바꾸면 됩니다.
+
+// Txt→Img: body.model 로 선택 (기본 zimage)
+const TXT_MODELS = {
+  zimage: {
     id: 'fal-ai/z-image/turbo',
     build: (p) => ({
       prompt: p.prompt,
@@ -21,15 +23,32 @@ const MODELS = {
       negative_prompt: p.negativePrompt || undefined,
     }),
   },
-  img2img: {
-    // FLUX Kontext (멀티 참조): 여러 이미지 + 지시문 기반 편집/합성
-    id: 'fal-ai/flux-pro/kontext/max/multi',
+  flux2: {
+    id: 'fal-ai/flux-2-pro',
     build: (p) => ({
       prompt: p.prompt,
-      image_urls: p.imageUrls,
+      image_size: p.imageSize || 'square_hd',
       num_images: p.numImages || 1,
     }),
   },
+  seedream: {
+    id: 'fal-ai/bytedance/seedream/v5/lite/text-to-image',
+    build: (p) => ({
+      prompt: p.prompt,
+      image_size: p.imageSize || 'square_hd',
+      num_images: p.numImages || 1,
+    }),
+  },
+}
+
+// Img→Img: FLUX Kontext (멀티 참조)
+const IMG_MODEL = {
+  id: 'fal-ai/flux-pro/kontext/max/multi',
+  build: (p) => ({
+    prompt: p.prompt,
+    image_urls: p.imageUrls,
+    num_images: p.numImages || 1,
+  }),
 }
 
 async function verifyUser(token) {
@@ -61,8 +80,7 @@ export default async function handler(req, res) {
   }
 
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
-  const model = MODELS[body.mode]
-  if (!model) return res.status(400).json({ error: '알 수 없는 모드입니다.' })
+  const model = body.mode === 'img2img' ? IMG_MODEL : TXT_MODELS[body.model] || TXT_MODELS.zimage
   if (!body.prompt) return res.status(400).json({ error: '프롬프트가 필요합니다.' })
   if (body.mode === 'img2img' && !(body.imageUrls && body.imageUrls.length))
     return res.status(400).json({ error: '입력 이미지가 필요합니다.' })

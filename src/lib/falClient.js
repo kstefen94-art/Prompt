@@ -16,6 +16,7 @@ export async function generate(params, userId) {
 
   const payload = {
     mode: params.mode,
+    model: params.model,
     prompt: params.prompt,
     negativePrompt: params.negativePrompt,
     imageSize: params.imageSize,

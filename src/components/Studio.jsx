@@ -22,6 +22,13 @@ const QUALITIES = [
   { id: 'max', label: '최고 (2K)', long: 1792 },
 ]
 
+// Txt→Img 모델 (perMp: 메가픽셀당 USD, flat: 장당 고정 USD)
+const TXT_MODELS = [
+  { id: 'zimage', label: 'Z-Image (저렴)', tool: 'fal Z-Image', perMp: 0.005 },
+  { id: 'flux2', label: 'FLUX 2 Pro (고품질)', tool: 'FLUX 2 Pro', perMp: 0.03 },
+  { id: 'seedream', label: 'Seedream 5 Lite (가성비)', tool: 'Seedream 5 Lite', flat: 0.03 },
+]
+
 function computeDims(ratioId, longSide) {
   const r = RATIOS.find((x) => x.id === ratioId) || RATIOS[0]
   const max = Math.max(r.aw, r.ah)
@@ -36,6 +43,7 @@ export default function Studio({ user, onGoProfile }) {
   const [negative, setNegative] = useState('')
   const [ratio, setRatio] = useState('1:1')
   const [quality, setQuality] = useState('standard')
+  const [txtModel, setTxtModel] = useState('zimage')
   const [numImages, setNumImages] = useState(1)
   // img2img 참조 이미지(여러 장): { id, file, url }
   const [refItems, setRefItems] = useState([])
@@ -51,7 +59,9 @@ export default function Studio({ user, onGoProfile }) {
   const longSide = (QUALITIES.find((q) => q.id === quality) || QUALITIES[0]).long
   const dims = computeDims(ratio, longSide)
   const mp = (dims.width * dims.height) / 1_000_000
-  const estWon = Math.round(mp * 0.005 * numImages * 1350)
+  const model = TXT_MODELS.find((m) => m.id === txtModel) || TXT_MODELS[0]
+  const perImageUsd = model.flat != null ? model.flat : mp * model.perMp
+  const estWon = Math.round(perImageUsd * numImages * 1350)
 
   useEffect(() => {
     return () => refItems.forEach((it) => URL.revokeObjectURL(it.url))
@@ -86,6 +96,7 @@ export default function Studio({ user, onGoProfile }) {
       const images = await generate(
         {
           mode,
+          model: txtModel,
           prompt: prompt.trim(),
           negativePrompt: negative.trim() || undefined,
           imageSize: dims,
@@ -96,7 +107,7 @@ export default function Studio({ user, onGoProfile }) {
       )
       setResults(images)
       const autoTitle = prompt.trim().slice(0, 24) || '무제'
-      const autoTools = [mode === 'img2img' ? 'FLUX Kontext' : 'fal Z-Image']
+      const autoTools = [mode === 'img2img' ? 'FLUX Kontext' : model.tool]
       setTitle(autoTitle)
       // 클릭 없이 자동 임시저장
       try {
@@ -165,6 +176,16 @@ export default function Studio({ user, onGoProfile }) {
 
       {mode === 'txt2img' && (
         <>
+          <div className="field">
+            <label>모델</label>
+            <select value={txtModel} onChange={(e) => setTxtModel(e.target.value)}>
+              {TXT_MODELS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="field-row">
             <div className="field">
               <label>이미지 비율</label>
