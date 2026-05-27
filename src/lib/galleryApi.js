@@ -7,6 +7,7 @@ function normalize(row) {
     no: row.id,
     title: row.title,
     categories: row.categories || [],
+    tools: row.tools || [],
     templateId: row.template_id || null,
     prompt: row.prompt || '',
     createdAt: row.created_at,
@@ -49,7 +50,7 @@ function mediaType(file) {
   return ['mp4', 'webm', 'mov', 'm4v'].includes(ext) ? 'video' : 'image'
 }
 
-export async function addWork({ title, categories, templateId, prompt, files }, userId) {
+export async function addWork({ title, categories, tools, templateId, prompt, files }, userId) {
   const media = []
   for (const file of files) {
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
@@ -60,7 +61,7 @@ export async function addWork({ title, categories, templateId, prompt, files }, 
   }
   const { error } = await supabase
     .from('works')
-    .insert({ title, categories, template_id: templateId || null, prompt, media })
+    .insert({ title, categories, tools: tools || [], template_id: templateId || null, prompt, media })
   if (error) throw error
 }
 
@@ -73,7 +74,7 @@ export async function deleteWork(work) {
 }
 
 // keptMedia: 유지할 항목 [{type, path}], removedPaths: 삭제할 스토리지 경로[], newFiles: 새로 추가할 File[]
-export async function updateWork(work, { title, categories, templateId, prompt, keptMedia, removedPaths, newFiles }, userId) {
+export async function updateWork(work, { title, categories, tools, templateId, prompt, keptMedia, removedPaths, newFiles }, userId) {
   const added = []
   for (const file of newFiles || []) {
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
@@ -88,7 +89,7 @@ export async function updateWork(work, { title, categories, templateId, prompt, 
   const media = [...(keptMedia || []), ...added]
   const { data, error } = await supabase
     .from('works')
-    .update({ title, categories, template_id: templateId || null, prompt, media })
+    .update({ title, categories, tools: tools || [], template_id: templateId || null, prompt, media })
     .eq('id', work.no)
     .select()
   if (error) throw error

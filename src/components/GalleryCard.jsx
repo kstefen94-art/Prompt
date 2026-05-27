@@ -50,6 +50,9 @@ export default function GalleryCard({ work, favorite, onToggleFav, onOpen }) {
           {work.categories.map((c) => (
             <span key={c} className="cat-tag">{c}</span>
           ))}
+          {(work.tools || []).map((t) => (
+            <span key={t} className="tool-tag">🛠 {t}</span>
+          ))}
         </div>
       </div>
     </article>

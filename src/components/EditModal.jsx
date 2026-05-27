@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { templates } from '../data/templates.js'
 import { updateWork } from '../lib/galleryApi.js'
+import ToolPicker from './ToolPicker.jsx'
 
 export default function EditModal({ work, userId, onClose, onDone }) {
   const [title, setTitle] = useState(work.title)
   const [categories, setCategories] = useState((work.categories || []).join(', '))
+  const [tools, setTools] = useState(work.tools || [])
   const [templateId, setTemplateId] = useState(work.templateId || '')
   const [prompt, setPrompt] = useState(work.prompt || '')
   // 기존 미디어: {type, src, path, remove}
@@ -44,6 +46,7 @@ export default function EditModal({ work, userId, onClose, onDone }) {
         {
           title: title.trim(),
           categories: categories.split(',').map((c) => c.trim()).filter(Boolean),
+          tools,
           templateId,
           prompt: prompt.trim(),
           keptMedia: kept.map((it) => ({ type: it.type, path: it.path })),
@@ -78,6 +81,10 @@ export default function EditModal({ work, userId, onClose, onDone }) {
           <div className="field">
             <label>카테고리 (쉼표로 구분)</label>
             <input value={categories} onChange={(e) => setCategories(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>사용한 도구</label>
+            <ToolPicker value={tools} onChange={setTools} />
           </div>
           <div className="field">
             <label>연결할 템플릿 (선택)</label>

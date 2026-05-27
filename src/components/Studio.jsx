@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { templates } from '../data/templates.js'
 import { generate, saveGeneratedWork } from '../lib/falClient.js'
+import ToolPicker from './ToolPicker.jsx'
 
 const MODES = [
   { id: 'txt2img', label: 'Txt → Img' },
@@ -48,6 +49,7 @@ export default function Studio({ user, onGoGallery }) {
   // 저장 폼
   const [title, setTitle] = useState('')
   const [categories, setCategories] = useState('')
+  const [tools, setTools] = useState([])
   const [templateId, setTemplateId] = useState('')
   const [saveMsg, setSaveMsg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -80,6 +82,7 @@ export default function Studio({ user, onGoGallery }) {
         user.id,
       )
       setResults(images)
+      setTools([mode === 'face' ? 'InstantID' : 'fal Z-Image'])
       if (!title) setTitle(prompt.trim().slice(0, 20))
     } catch (e) {
       setError(e.message)
@@ -96,6 +99,7 @@ export default function Studio({ user, onGoGallery }) {
       await saveGeneratedWork({
         title: title.trim(),
         categories: categories.split(',').map((c) => c.trim()).filter(Boolean),
+        tools,
         templateId,
         prompt: prompt.trim(),
         imageUrls: results,
@@ -244,6 +248,10 @@ export default function Studio({ user, onGoGallery }) {
                 onChange={(e) => setCategories(e.target.value)}
                 placeholder="예: 인물/화보"
               />
+            </div>
+            <div className="field">
+              <label>사용한 도구</label>
+              <ToolPicker value={tools} onChange={setTools} />
             </div>
             <div className="field">
               <label>연결할 템플릿 (선택)</label>

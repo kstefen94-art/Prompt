@@ -84,6 +84,9 @@ export default function GalleryLightbox({ work, favorite, onToggleFav, onClose, 
             {work.categories.map((c) => (
               <span key={c} className="cat-tag">{c}</span>
             ))}
+            {(work.tools || []).map((t) => (
+              <span key={t} className="tool-tag">🛠 {t}</span>
+            ))}
           </div>
           <div className="lb-prompt-head">
             <span>프롬프트</span>

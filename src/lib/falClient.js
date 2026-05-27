@@ -37,7 +37,7 @@ export async function generate(params, userId) {
   return data.images || []
 }
 
-export async function saveGeneratedWork({ title, categories, templateId, prompt, imageUrls }) {
+export async function saveGeneratedWork({ title, categories, tools, templateId, prompt, imageUrls }) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -55,6 +55,6 @@ export async function saveGeneratedWork({ title, categories, templateId, prompt,
   }
   const { error } = await supabase
     .from('works')
-    .insert({ title, categories, template_id: templateId || null, prompt, media })
+    .insert({ title, categories, tools: tools || [], template_id: templateId || null, prompt, media })
   if (error) throw error
 }

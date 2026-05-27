@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { templates } from '../data/templates.js'
 import { addWork } from '../lib/galleryApi.js'
+import ToolPicker from './ToolPicker.jsx'
 
 export default function UploadModal({ userId, onClose, onDone }) {
   const [title, setTitle] = useState('')
   const [categories, setCategories] = useState('')
+  const [tools, setTools] = useState([])
   const [templateId, setTemplateId] = useState('')
   const [prompt, setPrompt] = useState('')
   // 고른 파일 목록: { id, file, url(미리보기), isVideo }
@@ -65,6 +67,7 @@ export default function UploadModal({ userId, onClose, onDone }) {
             .split(',')
             .map((c) => c.trim())
             .filter(Boolean),
+          tools,
           templateId,
           prompt: prompt.trim(),
           files: items.map((it) => it.file),
@@ -101,6 +104,10 @@ export default function UploadModal({ userId, onClose, onDone }) {
               onChange={(e) => setCategories(e.target.value)}
               placeholder="예: 인물/화보, 캐릭터/코스프레"
             />
+          </div>
+          <div className="field">
+            <label>사용한 도구 (여러 개 선택 가능)</label>
+            <ToolPicker value={tools} onChange={setTools} />
           </div>
           <div className="field">
             <label>연결할 템플릿 (선택)</label>

@@ -65,7 +65,8 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
       return (
         w.title.toLowerCase().includes(q) ||
         w.prompt.toLowerCase().includes(q) ||
-        w.categories.join(' ').toLowerCase().includes(q)
+        w.categories.join(' ').toLowerCase().includes(q) ||
+        (w.tools || []).join(' ').toLowerCase().includes(q)
       )
     })
     return [...list].sort((a, b) => {

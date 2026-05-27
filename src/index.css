@@ -633,6 +633,15 @@ code {
   padding: 3px 9px;
   border-radius: 7px;
 }
+.tool-tag {
+  background: var(--accent-soft);
+  border: 1px solid #f3d3cc;
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 7px;
+}
 
 /* ---------- Lightbox ---------- */
 .lightbox {
