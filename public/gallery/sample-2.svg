@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 760">
+  <defs>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8b6c4"/>
+      <stop offset="1" stop-color="#9c7a99"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="760" fill="url(#g2)"/>
+  <g transform="translate(300 340)">
+    <path d="M-46-30h92a10 10 0 0 1 10 10v60a10 10 0 0 1-10 10h-92a10 10 0 0 1-10-10v-60a10 10 0 0 1 10-10z" fill="none" stroke="#fff" stroke-width="5" opacity="0.85"/>
+    <circle cx="0" cy="12" r="20" fill="none" stroke="#fff" stroke-width="5" opacity="0.85"/>
+    <rect x="-18" y="-38" width="36" height="14" rx="4" fill="#fff" opacity="0.85"/>
+  </g>
+  <text x="300" y="410" font-family="sans-serif" font-size="30" fill="#fff" text-anchor="middle" opacity="0.9">샘플 이미지</text>
+</svg>
