@@ -137,16 +137,49 @@ code {
   justify-content: space-between;
   gap: 12px;
 }
-.topbar h1 {
-  margin: 0;
-  font-size: 1.7rem;
-  font-weight: 800;
-  letter-spacing: -0.035em;
+/* 고정 브랜드 바 */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.topbar p {
-  margin: 2px 0 0;
+.brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.brand-name {
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+/* 페이지 히어로 (큰 타이틀) */
+.page-hero {
+  padding: 6px 0 18px;
+}
+.page-hero h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 6vw, 2.3rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+.page-hero h1::after {
+  content: '.';
+  color: var(--accent);
+}
+.page-hero p {
+  margin: 8px 0 0;
   color: var(--muted);
-  font-size: 0.86rem;
+  font-size: 0.95rem;
 }
 .lang {
   border: 1px solid var(--border);

@@ -45,15 +45,20 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="topbar-inner">
-          <div>
-            <h1>{header.title}</h1>
-            {header.sub && <p>{header.sub}</p>}
+          <div className="brand">
+            <span className="brand-mark">P</span>
+            <span className="brand-name">Prompt&nbsp;Studio</span>
           </div>
           <span className="lang">🌐 한국어</span>
         </div>
       </header>
 
       <main className="content">
+        <div className="page-hero">
+          <h1>{header.title}</h1>
+          {header.sub && <p>{header.sub}</p>}
+        </div>
+
         {activeTab === 'gallery' && (
           <Gallery
             filterTemplateId={templateFilter}
