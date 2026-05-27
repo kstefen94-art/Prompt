@@ -1,19 +1,21 @@
+/* ICE × MINT — 아이스라떼(#E4DDD3) 위에 상쾌한 민트(#00A19B) */
 :root {
-  --bg: #f4ece4;
-  --surface: #fbf7f2;
-  --card: #fcf9f5;
-  --border: #e8ddd1;
-  --text: #2c2622;
-  --muted: #8a7c6e;
-  --accent: #d65d4f;
-  --accent-hover: #c24a3d;
-  --accent-soft: #fbe7e2;
-  --code-bg: #efe8df;
-  --radius: 16px;
-  --shadow: 0 1px 2px rgba(60, 40, 20, 0.04), 0 10px 26px rgba(60, 40, 20, 0.06);
-  --bar-bg: rgba(244, 236, 228, 0.9);
+  --bg: #ece6db;
+  --surface: #faf7f1;
+  --card: #ffffff;
+  --latte: #e4ddd3;
+  --border: #e0d8ca;
+  --text: #15211f;
+  --muted: #79847f;
+  --accent: #00a19b;
+  --accent-hover: #00857f;
+  --accent-soft: #d4efec;
+  --code-bg: #f1ece2;
+  --radius: 20px;
+  --shadow: 0 2px 4px rgba(20, 40, 38, 0.03), 0 16px 36px rgba(0, 90, 85, 0.09);
+  --bar-bg: rgba(236, 230, 219, 0.82);
   --media-bg: #ffffff;
-  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Apple SD Gothic Neo',
+  --font: 'Pretendard', system-ui, -apple-system, 'Apple SD Gothic Neo',
     'Malgun Gothic', sans-serif;
 }
 
@@ -95,6 +97,11 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
+h1,
+h2,
+h3 {
+  letter-spacing: -0.025em;
+}
 button {
   font-family: inherit;
   cursor: pointer;
@@ -132,8 +139,9 @@ code {
 }
 .topbar h1 {
   margin: 0;
-  font-size: 1.5rem;
-  letter-spacing: -0.02em;
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
 }
 .topbar p {
   margin: 2px 0 0;
@@ -266,6 +274,7 @@ code {
 .tpl-title {
   margin: 0;
   font-size: 1.2rem;
+  font-weight: 700;
 }
 .level {
   font-size: 0.72rem;
@@ -734,8 +743,23 @@ code {
 }
 .lb-media {
   max-width: 100%;
-  max-height: 90vh;
+  max-height: 86vh;
+  object-fit: contain;
   display: block;
+}
+/* 라이트박스 닫기 X — 이미지 위에서도 잘 보이게 동그란 버튼 */
+.lightbox .modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.4rem;
+  z-index: 5;
+  backdrop-filter: blur(4px);
 }
 .lb-nav {
   position: absolute;
@@ -1176,6 +1200,9 @@ code {
     max-height: 92vh;
   }
   .lb-stage {
-    max-height: 50vh;
+    max-height: 52vh;
+  }
+  .lb-media {
+    max-height: 52vh;
   }
 }

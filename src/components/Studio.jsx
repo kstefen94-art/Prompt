@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
-import { templates } from '../data/templates.js'
 import { generate } from '../lib/falClient.js'
 import { addDraft } from '../lib/drafts.js'
 import { downloadUrl } from '../lib/download.js'
-import ToolPicker from './ToolPicker.jsx'
 
 const MODES = [
   { id: 'txt2img', label: 'Txt → Img' },
@@ -46,13 +44,9 @@ export default function Studio({ user, onGoProfile }) {
   const [error, setError] = useState('')
   const [results, setResults] = useState([])
 
-  // 저장 폼
+  // 생성 후 자동 임시저장
   const [title, setTitle] = useState('')
-  const [categories, setCategories] = useState('')
-  const [tools, setTools] = useState([])
-  const [templateId, setTemplateId] = useState('')
   const [saveMsg, setSaveMsg] = useState('')
-  const [saving, setSaving] = useState(false)
 
   const longSide = (QUALITIES.find((q) => q.id === quality) || QUALITIES[0]).long
   const dims = computeDims(ratio, longSide)
@@ -101,8 +95,16 @@ export default function Studio({ user, onGoProfile }) {
         user.id,
       )
       setResults(images)
-      setTools([mode === 'img2img' ? 'FLUX Kontext' : 'fal Z-Image'])
-      if (!title) setTitle(prompt.trim().slice(0, 20))
+      const autoTitle = prompt.trim().slice(0, 24) || '무제'
+      const autoTools = [mode === 'img2img' ? 'FLUX Kontext' : 'fal Z-Image']
+      setTitle(autoTitle)
+      // 클릭 없이 자동 임시저장
+      try {
+        await autoSaveDraft(images, autoTitle, autoTools)
+        setSaveMsg('자동 임시저장됨 — 프로필 탭에서 확인·발행하세요 ✓')
+      } catch (e) {
+        setSaveMsg(`자동 임시저장 실패: ${e.message}`)
+      }
     } catch (e) {
       setError(e.message)
     } finally {
@@ -110,35 +112,23 @@ export default function Studio({ user, onGoProfile }) {
     }
   }
 
-  async function saveDraft() {
-    setSaving(true)
-    setSaveMsg('')
-    try {
-      const media = []
-      for (const url of results) {
-        const resp = await fetch(url)
-        const blob = await resp.blob()
-        media.push({ type: blob.type.startsWith('video') ? 'video' : 'image', blob })
-      }
-      await addDraft({
-        id: crypto.randomUUID(),
-        title: title.trim(),
-        categories: categories.split(',').map((c) => c.trim()).filter(Boolean),
-        tools,
-        templateId,
-        prompt: prompt.trim(),
-        media,
-        createdAt: Date.now(),
-      })
-      setSaveMsg('임시저장됨 — 프로필 탭에서 갤러리로 보낼 수 있어요 ✓')
-      setResults([])
-      setTitle('')
-      setCategories('')
-    } catch (e) {
-      setSaveMsg(`임시저장 실패: ${e.message}`)
-    } finally {
-      setSaving(false)
+  async function autoSaveDraft(images, autoTitle, autoTools) {
+    const media = []
+    for (const url of images) {
+      const resp = await fetch(url)
+      const blob = await resp.blob()
+      media.push({ type: blob.type.startsWith('video') ? 'video' : 'image', blob })
     }
+    await addDraft({
+      id: crypto.randomUUID(),
+      title: autoTitle,
+      categories: [],
+      tools: autoTools,
+      templateId: '',
+      prompt: prompt.trim(),
+      media,
+      createdAt: Date.now(),
+    })
   }
 
   return (
@@ -263,39 +253,6 @@ export default function Studio({ user, onGoProfile }) {
                 </button>
               </div>
             ))}
-          </div>
-          <div className="save-form">
-            <h3>임시저장</h3>
-            <div className="field">
-              <label>제목 *</label>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} />
-            </div>
-            <div className="field">
-              <label>카테고리 (쉼표로 구분)</label>
-              <input
-                value={categories}
-                onChange={(e) => setCategories(e.target.value)}
-                placeholder="예: 인물/화보"
-              />
-            </div>
-            <div className="field">
-              <label>사용한 도구</label>
-              <ToolPicker value={tools} onChange={setTools} />
-            </div>
-            <div className="field">
-              <label>연결할 템플릿 (선택)</label>
-              <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
-                <option value="">없음</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button className="builder-btn full" onClick={saveDraft} disabled={saving}>
-              {saving ? '저장 중…' : '임시저장'}
-            </button>
           </div>
         </div>
       )}
