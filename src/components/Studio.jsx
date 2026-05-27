@@ -43,7 +43,7 @@ export default function Studio({ user, onGoProfile }) {
   const [negative, setNegative] = useState('')
   const [ratio, setRatio] = useState('1:1')
   const [quality, setQuality] = useState('standard')
-  const [txtModel, setTxtModel] = useState('zimage')
+  const [selectedModels, setSelectedModels] = useState(['zimage'])
   const [numImages, setNumImages] = useState(1)
   // img2img 참조 이미지(여러 장): { id, file, url }
   const [refItems, setRefItems] = useState([])
@@ -59,9 +59,20 @@ export default function Studio({ user, onGoProfile }) {
   const longSide = (QUALITIES.find((q) => q.id === quality) || QUALITIES[0]).long
   const dims = computeDims(ratio, longSide)
   const mp = (dims.width * dims.height) / 1_000_000
-  const model = TXT_MODELS.find((m) => m.id === txtModel) || TXT_MODELS[0]
-  const perImageUsd = model.flat != null ? model.flat : mp * model.perMp
-  const estWon = Math.round(perImageUsd * numImages * 1350)
+  const selModels = TXT_MODELS.filter((m) => selectedModels.includes(m.id))
+  const totalUsd =
+    selModels.reduce((s, m) => s + (m.flat != null ? m.flat : mp * m.perMp), 0) * numImages
+  const estWon = Math.round(totalUsd * 1350)
+
+  function toggleModel(id) {
+    setSelectedModels((prev) =>
+      prev.includes(id)
+        ? prev.length > 1
+          ? prev.filter((x) => x !== id)
+          : prev
+        : [...prev, id],
+    )
+  }
 
   useEffect(() => {
     return () => refItems.forEach((it) => URL.revokeObjectURL(it.url))
@@ -88,39 +99,58 @@ export default function Studio({ user, onGoProfile }) {
     if (!prompt.trim()) return setError('프롬프트를 입력하세요.')
     if (mode === 'img2img' && refItems.length === 0)
       return setError('참조 이미지를 1장 이상 선택하세요.')
+    if (mode === 'txt2img' && selectedModels.length === 0)
+      return setError('모델을 1개 이상 선택하세요.')
     setError('')
     setSaveMsg('')
     setBusy(true)
     setResults([])
-    try {
-      const images = await generate(
-        {
-          mode,
-          model: txtModel,
-          prompt: prompt.trim(),
-          negativePrompt: negative.trim() || undefined,
-          imageSize: dims,
-          numImages,
-          inputFiles: refItems.map((it) => it.file),
-        },
-        user.id,
-      )
-      setResults(images)
-      const autoTitle = prompt.trim().slice(0, 24) || '무제'
-      const autoTools = [mode === 'img2img' ? 'FLUX Kontext' : model.tool]
-      setTitle(autoTitle)
-      // 클릭 없이 자동 임시저장
+    const autoTitle = prompt.trim().slice(0, 24) || '무제'
+    setTitle(autoTitle)
+
+    const jobs =
+      mode === 'img2img'
+        ? [{ id: 'kontext', label: '편집 결과', tool: 'FLUX Kontext' }]
+        : TXT_MODELS.filter((m) => selectedModels.includes(m.id))
+
+    const groups = []
+    const errs = []
+    await Promise.all(
+      jobs.map(async (j) => {
+        try {
+          const imgs = await generate(
+            {
+              mode,
+              model: j.id,
+              prompt: prompt.trim(),
+              negativePrompt: negative.trim() || undefined,
+              imageSize: dims,
+              numImages,
+              inputFiles: refItems.map((it) => it.file),
+            },
+            user.id,
+          )
+          groups.push({ id: j.id, label: j.label, tool: j.tool, images: imgs })
+        } catch (e) {
+          errs.push(`${j.label}: ${e.message}`)
+        }
+      }),
+    )
+    const order = jobs.map((j) => j.id)
+    groups.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+    setResults(groups)
+    if (errs.length) setError(errs.join('\n'))
+
+    // 각 모델 결과를 자동 임시저장
+    for (const g of groups) {
       try {
-        await autoSaveDraft(images, autoTitle, autoTools)
-        setSaveMsg('자동 임시저장됨 — 프로필 탭에서 확인·발행하세요 ✓')
-      } catch (e) {
-        setSaveMsg(`자동 임시저장 실패: ${e.message}`)
+        await autoSaveDraft(g.images, `${autoTitle} · ${g.label}`, [g.tool])
+      } catch {
+        /* 개별 저장 실패는 건너뜀 */
       }
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setBusy(false)
     }
+    if (groups.length) setSaveMsg('자동 임시저장됨 — 프로필 탭에서 확인·발행하세요 ✓')
+    setBusy(false)
   }
 
   async function autoSaveDraft(images, autoTitle, autoTools) {
@@ -177,14 +207,19 @@ export default function Studio({ user, onGoProfile }) {
       {mode === 'txt2img' && (
         <>
           <div className="field">
-            <label>모델</label>
-            <select value={txtModel} onChange={(e) => setTxtModel(e.target.value)}>
+            <label>모델 (여러 개 선택해 비교)</label>
+            <div className="chips">
               {TXT_MODELS.map((m) => (
-                <option key={m.id} value={m.id}>
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`chip ${selectedModels.includes(m.id) ? 'chip--active' : ''}`}
+                  onClick={() => toggleModel(m.id)}
+                >
                   {m.label}
-                </option>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
           <div className="field-row">
             <div className="field">
@@ -209,7 +244,7 @@ export default function Studio({ user, onGoProfile }) {
             </div>
           </div>
           <span className="hint">
-            {dims.width}×{dims.height} · 약 {mp.toFixed(2)}MP · 예상 약 {estWon}원 ({numImages}장)
+            {dims.width}×{dims.height} · 모델 {selModels.length}개 · {numImages}장 · 예상 약 {estWon}원
           </span>
         </>
       )}
@@ -262,19 +297,24 @@ export default function Studio({ user, onGoProfile }) {
 
       {results.length > 0 && (
         <div className="studio-out">
-          <div className="studio-results">
-            {results.map((url, i) => (
-              <div key={i} className="studio-result">
-                <img src={url} alt="" />
-                <button
-                  className="result-dl"
-                  onClick={() => downloadUrl(url, `${title || 'image'}-${i + 1}`)}
-                >
-                  ⬇ 다운로드
-                </button>
+          {results.map((g) => (
+            <div key={g.id} className="result-group">
+              <h4 className="result-group-title">{g.label}</h4>
+              <div className="studio-results">
+                {g.images.map((url, i) => (
+                  <div key={i} className="studio-result">
+                    <img src={url} alt="" />
+                    <button
+                      className="result-dl"
+                      onClick={() => downloadUrl(url, `${title || 'image'}-${g.label}-${i + 1}`)}
+                    >
+                      ⬇ 다운로드
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
 
