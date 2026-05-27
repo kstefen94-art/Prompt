@@ -5,6 +5,7 @@ import Studio from './components/Studio.jsx'
 import Drafts from './components/Drafts.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 import ThemePicker from './components/ThemePicker.jsx'
+import TabIcon from './components/TabIcon.jsx'
 import { useAuth } from './lib/useAuth.js'
 import { applyTheme, loadTheme } from './lib/theme.js'
 
@@ -31,10 +32,10 @@ export default function App() {
 
   // 제작 탭은 로그인한 본인에게만 노출됩니다.
   const tabs = [
-    { id: 'gallery', label: '갤러리', icon: '🖼' },
-    { id: 'generator', label: '생성기', icon: '✨' },
-    ...(auth.user ? [{ id: 'studio', label: '제작', icon: '🎨' }] : []),
-    { id: 'profile', label: '프로필', icon: '👤' },
+    { id: 'gallery', label: '갤러리' },
+    { id: 'generator', label: '생성기' },
+    ...(auth.user ? [{ id: 'studio', label: '제작' }] : []),
+    { id: 'profile', label: '프로필' },
   ]
 
   // 로그아웃 등으로 접근 불가한 탭이면 갤러리로 되돌립니다.
@@ -102,7 +103,9 @@ export default function App() {
               setTab(t.id)
             }}
           >
-            <span className="tabbar-icon">{t.icon}</span>
+            <span className="tabbar-icon">
+              <TabIcon name={t.id} />
+            </span>
             <span className="tabbar-label">{t.label}</span>
           </button>
         ))}

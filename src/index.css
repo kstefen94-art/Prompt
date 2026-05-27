@@ -225,14 +225,22 @@ code {
   font-weight: 600;
 }
 .tabbar-icon {
-  font-size: 1.2rem;
-  filter: grayscale(1) opacity(0.7);
+  width: 48px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  transition: background 0.18s ease;
+}
+.tabbar-icon svg {
+  display: block;
 }
 .tabbar-btn.on {
   color: var(--accent);
 }
 .tabbar-btn.on .tabbar-icon {
-  filter: none;
+  background: var(--accent-soft);
 }
 
 /* ---------- Shared chips / search ---------- */
