@@ -86,9 +86,15 @@ export async function updateWork(work, { title, categories, templateId, prompt, 
     await supabase.storage.from(BUCKET).remove(removedPaths)
   }
   const media = [...(keptMedia || []), ...added]
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('works')
     .update({ title, categories, template_id: templateId || null, prompt, media })
     .eq('id', work.no)
+    .select()
   if (error) throw error
+  if (!data || data.length === 0) {
+    throw new Error(
+      '변경이 저장되지 않았습니다. Supabase works 테이블에 UPDATE 정책이 있는지 확인하세요.',
+    )
+  }
 }

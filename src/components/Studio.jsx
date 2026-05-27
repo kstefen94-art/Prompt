@@ -8,19 +8,22 @@ const MODES = [
   { id: 'face', label: 'InstantID' },
 ]
 
-const SIZES = [
-  { value: 'square_hd', label: '정사각 1:1' },
-  { value: 'portrait_4_3', label: '세로 3:4' },
-  { value: 'portrait_16_9', label: '세로 9:16' },
-  { value: 'landscape_4_3', label: '가로 4:3' },
-  { value: 'landscape_16_9', label: '가로 16:9' },
+const RATIOS = [
+  { id: '1:1', label: '정사각 1:1', w: 1024, h: 1024 },
+  { id: '3:4', label: '세로 3:4', w: 960, h: 1280 },
+  { id: '9:16', label: '세로 9:16', w: 720, h: 1280 },
+  { id: '4:3', label: '가로 4:3', w: 1280, h: 960 },
+  { id: '16:9', label: '가로 16:9', w: 1280, h: 720 },
+  { id: 'custom', label: '직접 입력', w: 1024, h: 1024 },
 ]
 
 export default function Studio({ user, onGoGallery }) {
   const [mode, setMode] = useState('txt2img')
   const [prompt, setPrompt] = useState('')
   const [negative, setNegative] = useState('')
-  const [imageSize, setImageSize] = useState('square_hd')
+  const [ratio, setRatio] = useState('1:1')
+  const [customW, setCustomW] = useState(1024)
+  const [customH, setCustomH] = useState(1024)
   const [numImages, setNumImages] = useState(1)
   const [strength, setStrength] = useState(0.75)
   const [inputFile, setInputFile] = useState(null)
@@ -37,6 +40,16 @@ export default function Studio({ user, onGoGallery }) {
   const [saveMsg, setSaveMsg] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const dims =
+    ratio === 'custom'
+      ? { width: Number(customW) || 1024, height: Number(customH) || 1024 }
+      : (() => {
+          const r = RATIOS.find((x) => x.id === ratio)
+          return { width: r.w, height: r.h }
+        })()
+  const mp = (dims.width * dims.height) / 1_000_000
+  const estWon = Math.round(mp * 0.005 * numImages * 1350)
+
   async function run() {
     if (!prompt.trim()) return setError('프롬프트를 입력하세요.')
     if (mode === 'img2img' && !inputFile) return setError('입력 이미지를 선택하세요.')
@@ -51,7 +64,7 @@ export default function Studio({ user, onGoGallery }) {
           mode,
           prompt: prompt.trim(),
           negativePrompt: negative.trim() || undefined,
-          imageSize,
+          imageSize: dims,
           numImages,
           strength,
           inputFile,
@@ -124,16 +137,47 @@ export default function Studio({ user, onGoGallery }) {
       </div>
 
       {mode === 'txt2img' && (
-        <div className="field">
-          <label>이미지 크기</label>
-          <select value={imageSize} onChange={(e) => setImageSize(e.target.value)}>
-            {SIZES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <>
+          <div className="field">
+            <label>이미지 비율</label>
+            <select value={ratio} onChange={(e) => setRatio(e.target.value)}>
+              {RATIOS.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label}
+                  {r.id !== 'custom' ? ` (${r.w}×${r.h})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          {ratio === 'custom' && (
+            <div className="field-row">
+              <div className="field">
+                <label>가로 (px)</label>
+                <input
+                  type="number"
+                  min="256"
+                  max="2048"
+                  value={customW}
+                  onChange={(e) => setCustomW(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label>세로 (px)</label>
+                <input
+                  type="number"
+                  min="256"
+                  max="2048"
+                  value={customH}
+                  onChange={(e) => setCustomH(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          <span className="hint">
+            {dims.width}×{dims.height} · 약 {mp.toFixed(2)}MP · 예상 약 {estWon}원 ({numImages}장)
+            {mp > 4 && ' · ⚠️ fal 최대 약 4MP'}
+          </span>
+        </>
       )}
 
       {mode === 'img2img' && (
