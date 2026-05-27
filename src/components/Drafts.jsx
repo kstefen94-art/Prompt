@@ -1,36 +1,27 @@
 import { useEffect, useState } from 'react'
-import { listDrafts, deleteDraft } from '../lib/drafts.js'
-import { publishDraft } from '../lib/falClient.js'
+import { listDrafts, deleteDraft, publishDraft } from '../lib/drafts.js'
 
 export default function Drafts() {
   const [drafts, setDrafts] = useState([])
-  const [urls, setUrls] = useState({})
   const [busyId, setBusyId] = useState(null)
   const [msg, setMsg] = useState('')
 
   async function load() {
-    setDrafts(await listDrafts())
+    try {
+      setDrafts(await listDrafts())
+    } catch (e) {
+      setMsg(`불러오기 오류: ${e.message}`)
+    }
   }
   useEffect(() => {
     load()
   }, [])
-
-  // blob → 미리보기 URL (정리 포함)
-  useEffect(() => {
-    const map = {}
-    drafts.forEach((d) => {
-      map[d.id] = d.media.map((m) => URL.createObjectURL(m.blob))
-    })
-    setUrls(map)
-    return () => Object.values(map).flat().forEach((u) => URL.revokeObjectURL(u))
-  }, [drafts])
 
   async function publish(d) {
     setBusyId(d.id)
     setMsg('')
     try {
       await publishDraft(d)
-      await deleteDraft(d.id)
       setMsg('갤러리로 보냈습니다 ✓')
       await load()
     } catch (e) {
@@ -42,14 +33,19 @@ export default function Drafts() {
 
   async function remove(d) {
     if (!confirm('이 임시저장을 삭제할까요?')) return
-    await deleteDraft(d.id)
-    load()
+    try {
+      await deleteDraft(d)
+      load()
+    } catch (e) {
+      setMsg(`삭제 실패: ${e.message}`)
+    }
   }
 
   if (drafts.length === 0) {
     return (
       <div className="drafts">
         <h3 className="drafts-title">임시저장</h3>
+        {msg && <p className="hint">{msg}</p>}
         <p className="hint">
           제작 탭에서 생성한 이미지를 임시저장하면 여기에 모입니다. 확인 후 갤러리로 보낼 수 있어요.
         </p>
@@ -65,11 +61,11 @@ export default function Drafts() {
         {drafts.map((d) => (
           <div key={d.id} className="draft-card">
             <div className="draft-thumbs">
-              {(urls[d.id] || []).map((u, i) =>
-                d.media[i]?.type === 'video' ? (
-                  <video key={i} src={u} muted preload="metadata" />
+              {d.media.map((m, i) =>
+                m.type === 'video' ? (
+                  <video key={i} src={m.src} muted preload="metadata" />
                 ) : (
-                  <img key={i} src={u} alt="" />
+                  <img key={i} src={m.src} alt="" />
                 ),
               )}
             </div>

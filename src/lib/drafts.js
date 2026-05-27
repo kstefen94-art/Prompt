@@ -1,47 +1,71 @@
-// 제작 탭에서 생성한 이미지를 "임시저장"으로 브라우저(IndexedDB)에 보관합니다.
-// 갤러리로 보내기 전까지의 개인 staging 공간이라 추가 DB 설정이 필요 없습니다.
-// 미디어는 Blob 그대로 저장하므로 fal 임시 URL이 만료돼도 유지됩니다.
+// 임시저장(드래프트)을 Supabase(서버)에 보관 → 기기 간 유지.
+// 미디어는 gallery 버킷의 drafts/<userId>/ 폴더, 메타는 drafts 테이블.
+import { supabase, BUCKET, publicUrl } from './supabase.js'
 
-const DB_NAME = 'studio-drafts'
-const STORE = 'drafts'
-
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1)
-    req.onupgradeneeded = () => {
-      req.result.createObjectStore(STORE, { keyPath: 'id' })
-    }
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error)
+// mediaBlobs: [{ type, blob }]
+export async function addDraft({ title, categories, tools, templateId, prompt, mediaBlobs }, userId) {
+  const media = []
+  for (const m of mediaBlobs) {
+    const ext = (m.blob.type.split('/')[1] || 'png').split('+')[0]
+    const path = `drafts/${userId}/${crypto.randomUUID()}.${ext}`
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, m.blob, { contentType: m.blob.type })
+    if (error) throw error
+    media.push({ type: m.type, path })
+  }
+  const { error } = await supabase.from('drafts').insert({
+    title,
+    categories: categories || [],
+    tools: tools || [],
+    template_id: templateId || null,
+    prompt: prompt || '',
+    media,
   })
-}
-
-export async function addDraft(draft) {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite')
-    tx.objectStore(STORE).put(draft)
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
-  })
+  if (error) throw error
 }
 
 export async function listDrafts() {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readonly')
-    const req = tx.objectStore(STORE).getAll()
-    req.onsuccess = () => resolve((req.result || []).sort((a, b) => b.createdAt - a.createdAt))
-    req.onerror = () => reject(req.error)
-  })
+  const { data, error } = await supabase
+    .from('drafts')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map((d) => ({
+    id: d.id,
+    title: d.title,
+    categories: d.categories || [],
+    tools: d.tools || [],
+    templateId: d.template_id,
+    prompt: d.prompt || '',
+    media: (d.media || []).map((m) => ({ type: m.type, src: publicUrl(m.path) })),
+    _paths: (d.media || []).map((m) => m.path),
+  }))
 }
 
-export async function deleteDraft(id) {
-  const db = await openDB()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite')
-    tx.objectStore(STORE).delete(id)
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
+export async function deleteDraft(draft) {
+  if (draft._paths?.length) {
+    await supabase.storage.from(BUCKET).remove(draft._paths)
+  }
+  const { error } = await supabase.from('drafts').delete().eq('id', draft.id)
+  if (error) throw error
+}
+
+// 발행: 같은 스토리지 경로를 그대로 works에 옮기고 draft 행만 삭제(파일 유지)
+export async function publishDraft(draft) {
+  const media = (draft._paths || []).map((path, i) => ({
+    type: draft.media[i]?.type || 'image',
+    path,
+  }))
+  const { error } = await supabase.from('works').insert({
+    title: draft.title || '제목 없음',
+    categories: draft.categories || [],
+    tools: draft.tools || [],
+    template_id: draft.templateId || null,
+    prompt: draft.prompt || '',
+    media,
   })
+  if (error) throw error
+  const { error: e2 } = await supabase.from('drafts').delete().eq('id', draft.id)
+  if (e2) throw e2
 }

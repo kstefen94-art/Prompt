@@ -89,6 +89,16 @@ export default function GalleryLightbox({ work, favorite, onToggleFav, onClose, 
               <span key={t} className="tool-tag">🛠 {t}</span>
             ))}
           </div>
+          {canEdit && (
+            <div className="lb-edit-actions">
+              <button className="edit-btn" onClick={onEdit}>
+                수정
+              </button>
+              <button className="delete-btn" onClick={onDelete}>
+                삭제
+              </button>
+            </div>
+          )}
           <button
             className="download-btn"
             onClick={() => downloadUrl(work.media[idx].src, `${work.title || 'image'}-${idx + 1}`)}
@@ -103,16 +113,6 @@ export default function GalleryLightbox({ work, favorite, onToggleFav, onClose, 
             </button>
           </div>
           <pre className="lb-prompt">{work.prompt}</pre>
-          {canEdit && (
-            <div className="lb-edit-actions">
-              <button className="edit-btn" onClick={onEdit}>
-                수정
-              </button>
-              <button className="delete-btn" onClick={onDelete}>
-                삭제
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

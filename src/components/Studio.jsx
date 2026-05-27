@@ -127,22 +127,16 @@ export default function Studio({ user, onGoProfile }) {
   }
 
   async function autoSaveDraft(images, autoTitle, autoTools) {
-    const media = []
+    const mediaBlobs = []
     for (const url of images) {
       const resp = await fetch(url)
       const blob = await resp.blob()
-      media.push({ type: blob.type.startsWith('video') ? 'video' : 'image', blob })
+      mediaBlobs.push({ type: blob.type.startsWith('video') ? 'video' : 'image', blob })
     }
-    await addDraft({
-      id: crypto.randomUUID(),
-      title: autoTitle,
-      categories: [],
-      tools: autoTools,
-      templateId: '',
-      prompt: prompt.trim(),
-      media,
-      createdAt: Date.now(),
-    })
+    await addDraft(
+      { title: autoTitle, categories: [], tools: autoTools, templateId: '', prompt: prompt.trim(), mediaBlobs },
+      user.id,
+    )
   }
 
   async function run() {
