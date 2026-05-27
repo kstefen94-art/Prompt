@@ -524,22 +524,21 @@ code {
 }
 
 .masonry {
-  column-count: 2;
-  column-gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
 }
 @media (min-width: 720px) {
   .masonry {
-    column-count: 3;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 @media (min-width: 1000px) {
   .masonry {
-    column-count: 4;
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 .photo {
-  break-inside: avoid;
-  margin-bottom: 14px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -551,13 +550,17 @@ code {
 .photo:hover {
   transform: translateY(-2px);
 }
+/* 표지는 1:1 고정 칸 — 크롭하지 않고 빈 부분은 흰색으로 채움 */
 .photo-media {
   position: relative;
-  line-height: 0;
+  aspect-ratio: 1 / 1;
+  background: #fff;
 }
 .cover {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
   display: block;
 }
 .photo-badges {
