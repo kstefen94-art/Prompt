@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Gallery from './components/Gallery.jsx'
 import Generator from './components/Generator.jsx'
 import Studio from './components/Studio.jsx'
 import Drafts from './components/Drafts.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
-import ThemePicker from './components/ThemePicker.jsx'
 import TabIcon from './components/TabIcon.jsx'
 import { useAuth } from './lib/useAuth.js'
-import { applyTheme, loadTheme } from './lib/theme.js'
 
 const HEADERS = {
   gallery: { title: '갤러리', sub: '직접 만든 AI 이미지와 영상 모음' },
@@ -20,10 +18,6 @@ export default function App() {
   const auth = useAuth()
   const [tab, setTab] = useState('gallery')
   const [templateFilter, setTemplateFilter] = useState(null)
-
-  useEffect(() => {
-    applyTheme(loadTheme())
-  }, [])
 
   function viewWorks(templateId) {
     setTemplateFilter(templateId)
@@ -91,7 +85,6 @@ export default function App() {
             </p>
             <AuthPanel auth={auth} />
             {auth.user && <Drafts />}
-            <ThemePicker />
           </div>
         )}
       </main>
