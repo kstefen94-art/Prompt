@@ -1,18 +1,14 @@
 import { useState } from 'react'
 import Gallery from './components/Gallery.jsx'
 import Generator from './components/Generator.jsx'
+import Studio from './components/Studio.jsx'
 import AuthPanel from './components/AuthPanel.jsx'
 import { useAuth } from './lib/useAuth.js'
-
-const TABS = [
-  { id: 'gallery', label: '갤러리', icon: '🖼' },
-  { id: 'generator', label: '생성기', icon: '✨' },
-  { id: 'profile', label: '프로필', icon: '👤' },
-]
 
 const HEADERS = {
   gallery: { title: '갤러리', sub: '직접 만든 AI 이미지와 영상 모음' },
   generator: { title: '프롬프트 생성기', sub: '자주 사용되는 프롬프트 구조와 패턴 모음' },
+  studio: { title: '제작', sub: 'Z-Image · InstantID 로 이미지 생성 (나만)' },
   profile: { title: '프로필', sub: '' },
 }
 
@@ -26,7 +22,17 @@ export default function App() {
     setTab('gallery')
   }
 
-  const header = HEADERS[tab]
+  // 제작 탭은 로그인한 본인에게만 노출됩니다.
+  const tabs = [
+    { id: 'gallery', label: '갤러리', icon: '🖼' },
+    { id: 'generator', label: '생성기', icon: '✨' },
+    ...(auth.user ? [{ id: 'studio', label: '제작', icon: '🎨' }] : []),
+    { id: 'profile', label: '프로필', icon: '👤' },
+  ]
+
+  // 로그아웃 등으로 접근 불가한 탭이면 갤러리로 되돌립니다.
+  const activeTab = tab === 'studio' && !auth.user ? 'gallery' : tab
+  const header = HEADERS[activeTab]
 
   return (
     <div className="app">
@@ -41,15 +47,18 @@ export default function App() {
       </header>
 
       <main className="content">
-        {tab === 'gallery' && (
+        {activeTab === 'gallery' && (
           <Gallery
             filterTemplateId={templateFilter}
             onClearTemplateFilter={() => setTemplateFilter(null)}
             user={auth.user}
           />
         )}
-        {tab === 'generator' && <Generator onViewWorks={viewWorks} />}
-        {tab === 'profile' && (
+        {activeTab === 'generator' && <Generator onViewWorks={viewWorks} />}
+        {activeTab === 'studio' && auth.user && (
+          <Studio user={auth.user} onGoGallery={() => setTab('gallery')} />
+        )}
+        {activeTab === 'profile' && (
           <div className="profile">
             <div className="profile-avatar">AI</div>
             <h2>나의 프롬프트 스튜디오</h2>
@@ -62,12 +71,12 @@ export default function App() {
       </main>
 
       <nav className="tabbar">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
-            className={`tabbar-btn ${tab === t.id ? 'on' : ''}`}
+            className={`tabbar-btn ${activeTab === t.id ? 'on' : ''}`}
             onClick={() => {
-              if (t.id === 'gallery' && tab === 'gallery') setTemplateFilter(null)
+              if (t.id === 'gallery' && activeTab === 'gallery') setTemplateFilter(null)
               setTab(t.id)
             }}
           >

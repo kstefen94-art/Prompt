@@ -7,7 +7,7 @@ function Media({ item }) {
   return <img className="lb-media" src={item.src} alt="" />
 }
 
-export default function GalleryLightbox({ work, favorite, onToggleFav, onClose, canEdit, onDelete }) {
+export default function GalleryLightbox({ work, favorite, onToggleFav, onClose, canEdit, onDelete, onEdit }) {
   const [idx, setIdx] = useState(0)
   const [copied, setCopied] = useState(false)
   const count = work.media.length
@@ -93,9 +93,14 @@ export default function GalleryLightbox({ work, favorite, onToggleFav, onClose, 
           </div>
           <pre className="lb-prompt">{work.prompt}</pre>
           {canEdit && (
-            <button className="delete-btn" onClick={onDelete}>
-              작품 삭제
-            </button>
+            <div className="lb-edit-actions">
+              <button className="edit-btn" onClick={onEdit}>
+                수정
+              </button>
+              <button className="delete-btn" onClick={onDelete}>
+                삭제
+              </button>
+            </div>
           )}
         </div>
       </div>

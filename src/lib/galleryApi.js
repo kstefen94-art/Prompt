@@ -71,3 +71,24 @@ export async function deleteWork(work) {
   const { error } = await supabase.from('works').delete().eq('id', work.no)
   if (error) throw error
 }
+
+// keptMedia: 유지할 항목 [{type, path}], removedPaths: 삭제할 스토리지 경로[], newFiles: 새로 추가할 File[]
+export async function updateWork(work, { title, categories, templateId, prompt, keptMedia, removedPaths, newFiles }, userId) {
+  const added = []
+  for (const file of newFiles || []) {
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
+    const path = `${userId}/${crypto.randomUUID()}.${ext}`
+    const { error } = await supabase.storage.from(BUCKET).upload(path, file)
+    if (error) throw error
+    added.push({ type: mediaType(file), path })
+  }
+  if (removedPaths?.length) {
+    await supabase.storage.from(BUCKET).remove(removedPaths)
+  }
+  const media = [...(keptMedia || []), ...added]
+  const { error } = await supabase
+    .from('works')
+    .update({ title, categories, template_id: templateId || null, prompt, media })
+    .eq('id', work.no)
+  if (error) throw error
+}

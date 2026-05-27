@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import GalleryCard from './GalleryCard.jsx'
 import GalleryLightbox from './GalleryLightbox.jsx'
 import UploadModal from './UploadModal.jsx'
+import EditModal from './EditModal.jsx'
 import { useWorks, deleteWork } from '../lib/galleryApi.js'
 
 const ALL = '전체'
@@ -23,6 +24,7 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
   const [favs, setFavs] = useState(loadFavs)
   const [opened, setOpened] = useState(null)
   const [showUpload, setShowUpload] = useState(false)
+  const [editing, setEditing] = useState(null)
 
   useEffect(() => {
     localStorage.setItem('gallery_favs', JSON.stringify([...favs]))
@@ -173,6 +175,10 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
           onToggleFav={toggleFav}
           canEdit={Boolean(user)}
           onDelete={() => handleDelete(opened)}
+          onEdit={() => {
+            setEditing(opened)
+            setOpened(null)
+          }}
           onClose={() => setOpened(null)}
         />
       )}
@@ -183,6 +189,18 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
           onClose={() => setShowUpload(false)}
           onDone={() => {
             setShowUpload(false)
+            refresh()
+          }}
+        />
+      )}
+
+      {editing && user && (
+        <EditModal
+          work={editing}
+          userId={user.id}
+          onClose={() => setEditing(null)}
+          onDone={() => {
+            setEditing(null)
             refresh()
           }}
         />
