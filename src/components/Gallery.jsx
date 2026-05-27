@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { works } from '../data/gallery.js'
 import GalleryCard from './GalleryCard.jsx'
 import GalleryLightbox from './GalleryLightbox.jsx'
+import UploadModal from './UploadModal.jsx'
+import { useWorks, deleteWork } from '../lib/galleryApi.js'
 
 const ALL = '전체'
 
@@ -13,13 +14,15 @@ function loadFavs() {
   }
 }
 
-export default function Gallery({ filterTemplateId, onClearTemplateFilter }) {
+export default function Gallery({ filterTemplateId, onClearTemplateFilter, user }) {
+  const { works, loading, error, refresh } = useWorks()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(ALL)
-  const [sort, setSort] = useState('latest') // latest | promptLen
+  const [sort, setSort] = useState('latest')
   const [favsOnly, setFavsOnly] = useState(false)
   const [favs, setFavs] = useState(loadFavs)
   const [opened, setOpened] = useState(null)
+  const [showUpload, setShowUpload] = useState(false)
 
   useEffect(() => {
     localStorage.setItem('gallery_favs', JSON.stringify([...favs]))
@@ -29,7 +32,7 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter }) {
     const set = new Set()
     works.forEach((w) => w.categories.forEach((c) => set.add(c)))
     return [ALL, ...set]
-  }, [])
+  }, [works])
 
   function toggleFav(no) {
     setFavs((prev) => {
@@ -37,6 +40,17 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter }) {
       next.has(no) ? next.delete(no) : next.add(no)
       return next
     })
+  }
+
+  async function handleDelete(work) {
+    if (!confirm(`"${work.title}" 작품을 삭제할까요? 되돌릴 수 없습니다.`)) return
+    try {
+      await deleteWork(work)
+      setOpened(null)
+      refresh()
+    } catch (e) {
+      alert(`삭제 실패: ${e.message}`)
+    }
   }
 
   const filtered = useMemo(() => {
@@ -52,14 +66,11 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter }) {
         w.categories.join(' ').toLowerCase().includes(q)
       )
     })
-    list = [...list].sort((a, b) => {
+    return [...list].sort((a, b) => {
       if (sort === 'promptLen') return b.prompt.length - a.prompt.length
       return new Date(b.createdAt) - new Date(a.createdAt)
     })
-    return list
-  }, [query, category, sort, favsOnly, favs, filterTemplateId])
-
-  const activeTemplateTitle = filterTemplateId
+  }, [works, query, category, sort, favsOnly, favs, filterTemplateId])
 
   return (
     <div className="gallery">
@@ -67,17 +78,26 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter }) {
         <span className="g-all">
           전체 <strong>{filtered.length}</strong>
         </span>
-        <button
-          className={`g-fav-toggle ${favsOnly ? 'on' : ''}`}
-          onClick={() => setFavsOnly((v) => !v)}
-        >
-          {favsOnly ? '♥' : '♡'} 즐겨찾기
-        </button>
+        <div className="g-top-actions">
+          <button
+            className={`g-fav-toggle ${favsOnly ? 'on' : ''}`}
+            onClick={() => setFavsOnly((v) => !v)}
+          >
+            {favsOnly ? '♥' : '♡'} 즐겨찾기
+          </button>
+          {user && (
+            <button className="add-btn" onClick={() => setShowUpload(true)}>
+              ＋ 작품 추가
+            </button>
+          )}
+        </div>
       </div>
 
       {filterTemplateId && (
         <div className="template-filter-note">
-          <span>패턴 <code>{activeTemplateTitle}</code> 의 작품만 보는 중</span>
+          <span>
+            패턴 <code>{filterTemplateId}</code> 의 작품만 보는 중
+          </span>
           <button onClick={onClearTemplateFilter}>전체 보기 ✕</button>
         </div>
       )}
@@ -115,7 +135,13 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter }) {
         ))}
       </div>
 
-      {filtered.length > 0 ? (
+      {error && <p className="error-text">불러오기 오류: {error}</p>}
+
+      {loading ? (
+        <div className="empty">
+          <p>불러오는 중…</p>
+        </div>
+      ) : filtered.length > 0 ? (
         <div className="masonry">
           {filtered.map((w) => (
             <GalleryCard
@@ -130,10 +156,13 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter }) {
       ) : (
         <div className="empty">
           <p>표시할 작품이 없어요.</p>
-          <p className="hint">
-            <code>public/gallery/</code> 에 이미지·영상을 넣고{' '}
-            <code>src/data/gallery.js</code> 에 추가하세요.
-          </p>
+          {user ? (
+            <button className="add-btn" onClick={() => setShowUpload(true)}>
+              ＋ 첫 작품 올리기
+            </button>
+          ) : (
+            <p className="hint">프로필 탭에서 로그인하면 작품을 추가할 수 있어요.</p>
+          )}
         </div>
       )}
 
@@ -142,7 +171,20 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter }) {
           work={opened}
           favorite={favs.has(opened.no)}
           onToggleFav={toggleFav}
+          canEdit={Boolean(user)}
+          onDelete={() => handleDelete(opened)}
           onClose={() => setOpened(null)}
+        />
+      )}
+
+      {showUpload && user && (
+        <UploadModal
+          userId={user.id}
+          onClose={() => setShowUpload(false)}
+          onDone={() => {
+            setShowUpload(false)
+            refresh()
+          }}
         />
       )}
     </div>

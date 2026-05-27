@@ -727,6 +727,55 @@ code {
   border-radius: 8px;
 }
 
+/* ---------- Add / delete / auth ---------- */
+.g-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.add-btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 9px 16px;
+  border-radius: 999px;
+}
+.add-btn:hover {
+  background: var(--accent-hover);
+}
+.delete-btn {
+  margin-top: 18px;
+  width: 100%;
+  border: 1px solid #e3a59d;
+  background: #fff;
+  color: #c0392b;
+  font-weight: 600;
+  padding: 11px;
+  border-radius: 10px;
+}
+.delete-btn:hover {
+  background: #fdecea;
+}
+.auth-box {
+  max-width: 360px;
+  margin: 20px auto 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.error-text {
+  color: #c0392b;
+  font-size: 0.85rem;
+  margin: 0;
+}
+.field input[type='file'] {
+  padding: 9px;
+  font-size: 0.85rem;
+}
+
 /* ---------- Profile / empty ---------- */
 .profile {
   text-align: center;
