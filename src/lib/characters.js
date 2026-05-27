@@ -8,17 +8,36 @@ async function authToken() {
   return session?.access_token
 }
 
+// 학습 이미지를 ~1024px JPEG로 축소 (업로드 용량 한도 회피 + 학습엔 충분)
+async function downscaleImage(file, maxSide = 1024, quality = 0.9) {
+  try {
+    const bmp = await createImageBitmap(file)
+    const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height))
+    const w = Math.round(bmp.width * scale)
+    const h = Math.round(bmp.height * scale)
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    canvas.getContext('2d').drawImage(bmp, 0, 0, w, h)
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality))
+    return blob || file
+  } catch {
+    return file // 변환 실패 시 원본 사용
+  }
+}
+
 // files: File[], onStatus: (status) => void
 export async function trainCharacter({ name, trigger, files, steps }, userId, onStatus) {
   // jszip은 학습할 때만 로드 (번들 최적화)
   const JSZip = (await import('jszip')).default
   const zip = new JSZip()
+  onStatus?.('이미지 준비 중…')
   let i = 0
   for (const f of files) {
-    const ext = (f.name.split('.').pop() || 'png').toLowerCase()
-    zip.file(`img_${i++}.${ext}`, f)
+    const blob = await downscaleImage(f)
+    zip.file(`img_${i++}.jpg`, blob)
   }
-  const zipBlob = await zip.generateAsync({ type: 'blob' })
+  const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
   const zipPath = `train/${userId}/${crypto.randomUUID()}.zip`
   const { error } = await supabase.storage
     .from(BUCKET)
