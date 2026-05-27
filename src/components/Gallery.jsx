@@ -171,6 +171,7 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
         </div>
       ) : (
         <div className="empty">
+          <span className="empty-emoji">🖼</span>
           <p>표시할 작품이 없어요.</p>
           {user ? (
             <button className="add-btn" onClick={() => setShowUpload(true)}>
