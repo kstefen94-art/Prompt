@@ -45,7 +45,10 @@ const TXT_MODELS = {
       prompt: p.prompt,
       image_size: p.imageSize || 'square_hd',
       num_images: p.numImages || 1,
-      loras: p.loraUrl ? [{ path: p.loraUrl, scale: 1 }] : [],
+      // Z-Image Turbo는 CFG≈1, 8스텝 — 안 맞추면 검은 이미지가 나옴
+      guidance_scale: 1,
+      num_inference_steps: 8,
+      loras: p.loraUrl ? [{ path: p.loraUrl, scale: p.loraScale ?? 1 }] : [],
     }),
   },
 }
