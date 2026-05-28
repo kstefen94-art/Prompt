@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { templates } from '../data/templates.js'
+import { CATEGORIES } from '../data/categories.js'
 import { addWork } from '../lib/galleryApi.js'
 import ToolPicker from './ToolPicker.jsx'
 
 export default function UploadModal({ userId, onClose, onDone }) {
   const [title, setTitle] = useState('')
-  const [categories, setCategories] = useState('')
+  const [category, setCategory] = useState('')
   const [tools, setTools] = useState([])
   const [templateId, setTemplateId] = useState('')
   const [prompt, setPrompt] = useState('')
@@ -63,10 +64,7 @@ export default function UploadModal({ userId, onClose, onDone }) {
       await addWork(
         {
           title: title.trim(),
-          categories: categories
-            .split(',')
-            .map((c) => c.trim())
-            .filter(Boolean),
+          categories: category ? [category] : [],
           tools,
           templateId,
           prompt: prompt.trim(),
@@ -98,12 +96,15 @@ export default function UploadModal({ userId, onClose, onDone }) {
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="예: 메이드 컨셉" />
           </div>
           <div className="field">
-            <label>카테고리 (쉼표로 구분)</label>
-            <input
-              value={categories}
-              onChange={(e) => setCategories(e.target.value)}
-              placeholder="예: 인물/화보, 캐릭터/코스프레"
-            />
+            <label>카테고리</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">선택 안 함</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="field">
             <label>사용한 도구 (여러 개 선택 가능)</label>

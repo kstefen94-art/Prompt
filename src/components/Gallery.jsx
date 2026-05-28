@@ -4,6 +4,7 @@ import GalleryLightbox from './GalleryLightbox.jsx'
 import UploadModal from './UploadModal.jsx'
 import EditModal from './EditModal.jsx'
 import { useWorks, deleteWork } from '../lib/galleryApi.js'
+import { CATEGORIES } from '../data/categories.js'
 
 const ALL = '전체'
 
@@ -32,9 +33,10 @@ export default function Gallery({ filterTemplateId, onClearTemplateFilter, user 
   }, [favs])
 
   const categories = useMemo(() => {
-    const set = new Set()
-    works.forEach((w) => w.categories.forEach((c) => set.add(c)))
-    return [ALL, ...set]
+    const used = new Set()
+    works.forEach((w) => w.categories.forEach((c) => used.add(c)))
+    const extras = [...used].filter((c) => !CATEGORIES.includes(c))
+    return [ALL, ...CATEGORIES, ...extras]
   }, [works])
 
   function toggleFav(no) {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { templates } from '../data/templates.js'
+import { CATEGORIES } from '../data/categories.js'
 import { updateWork } from '../lib/galleryApi.js'
 import ToolPicker from './ToolPicker.jsx'
 
 export default function EditModal({ work, userId, onClose, onDone }) {
   const [title, setTitle] = useState(work.title)
-  const [categories, setCategories] = useState((work.categories || []).join(', '))
+  const [category, setCategory] = useState((work.categories || [])[0] || '')
   const [tools, setTools] = useState(work.tools || [])
   const [templateId, setTemplateId] = useState(work.templateId || '')
   const [prompt, setPrompt] = useState(work.prompt || '')
@@ -45,7 +46,7 @@ export default function EditModal({ work, userId, onClose, onDone }) {
         work,
         {
           title: title.trim(),
-          categories: categories.split(',').map((c) => c.trim()).filter(Boolean),
+          categories: category ? [category] : [],
           tools,
           templateId,
           prompt: prompt.trim(),
@@ -79,8 +80,15 @@ export default function EditModal({ work, userId, onClose, onDone }) {
             <input value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div className="field">
-            <label>카테고리 (쉼표로 구분)</label>
-            <input value={categories} onChange={(e) => setCategories(e.target.value)} />
+            <label>카테고리</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">선택 안 함</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="field">
             <label>사용한 도구</label>
