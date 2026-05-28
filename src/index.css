@@ -185,6 +185,9 @@ code {
   font-size: 1.08rem;
   letter-spacing: -0.01em;
 }
+.brand-ai {
+  color: var(--accent);
+}
 
 /* 페이지 히어로 (큰 타이틀) */
 .page-hero {
