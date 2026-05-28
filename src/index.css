@@ -175,6 +175,18 @@ code {
   align-items: center;
   gap: 10px;
 }
+.brand-logo {
+  height: 42px;
+  width: auto;
+  display: block;
+}
+.splash-logo-img {
+  position: relative;
+  z-index: 1;
+  width: min(72vw, 440px);
+  height: auto;
+  animation: markIn 0.7s cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
+}
 .brand-mark {
   width: 30px;
   height: 30px;
