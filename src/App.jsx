@@ -48,7 +48,7 @@ export default function App() {
           <div className="brand">
             <span className="brand-mark" aria-hidden="true">
               <svg viewBox="0 0 32 32" width="30" height="30">
-                <rect width="32" height="32" rx="9" fill="#00a19b" />
+                <rect width="32" height="32" rx="9" fill="#8b5cf6" />
                 <path
                   d="M16 6.2 L18.4 13.6 L25.8 16 L18.4 18.4 L16 25.8 L13.6 18.4 L6.2 16 L13.6 13.6 Z"
                   fill="#fff"
