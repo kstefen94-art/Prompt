@@ -1,21 +1,21 @@
-/* BRIGHT PASTEL — 로고(하늘·파스텔·보라)에 맞춘 밝고 부드러운 톤 */
+/* AISHOWCASE — 로고(하늘·파스텔·라벤더 하트)에 맞춘 소프트 톤 */
 :root {
-  --bg: #f4f4fc;
+  --bg: #e9eefb;
   --surface: #ffffff;
   --card: #ffffff;
-  --latte: #efeefb;
-  --border: #e6e6f4;
-  --text: #20223a;
-  --muted: #7a7e9c;
-  --accent: #8b5cf6;
-  --accent-hover: #7c3aed;
-  --accent-soft: #efe9ff;
-  --code-bg: #f1f0fb;
-  --code-text: #5a4d6e;
-  --radius: 18px;
-  --shadow: 0 2px 4px rgba(80, 60, 140, 0.04), 0 14px 34px rgba(120, 90, 200, 0.1);
-  --bar-bg: rgba(244, 244, 252, 0.85);
-  --media-bg: #f3f4fb;
+  --latte: #eef1fc;
+  --border: #e1e6f4;
+  --text: #2a2c46;
+  --muted: #7d83a4;
+  --accent: #8d6cf0;
+  --accent-hover: #7a52e6;
+  --accent-soft: #ece6ff;
+  --code-bg: #eef0fb;
+  --code-text: #5a5470;
+  --radius: 22px;
+  --shadow: 0 2px 6px rgba(90, 90, 160, 0.05), 0 16px 38px rgba(120, 110, 210, 0.12);
+  --bar-bg: rgba(233, 238, 251, 0.82);
+  --media-bg: #eef1fb;
   --font: 'Pretendard', system-ui, -apple-system, 'Apple SD Gothic Neo',
     'Malgun Gothic', sans-serif;
   --font-display: 'Space Grotesk', 'Pretendard', system-ui, sans-serif;
@@ -30,7 +30,8 @@ body {
   padding: 0;
 }
 body {
-  background: var(--bg);
+  background: linear-gradient(180deg, #e8f1ff 0%, #ece9fc 60%, #f1e9fb 100%);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font);
   line-height: 1.55;
