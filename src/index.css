@@ -68,34 +68,80 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.55s ease;
+  transition: opacity 0.55s ease, transform 0.55s ease;
 }
 .splash--leave {
   opacity: 0;
+  transform: scale(1.06);
   pointer-events: none;
 }
-.splash-logo {
+.splash-inner {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  animation: splashIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  gap: 18px;
+}
+.splash-glow {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  width: 220px;
+  height: 220px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.5), transparent 70%);
+  filter: blur(22px);
+  z-index: 0;
+  animation: glowPulse 2s ease-out both;
+}
+.splash-mark {
+  position: relative;
+  z-index: 1;
+  animation: markIn 0.7s cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
 }
 .splash-name {
+  position: relative;
+  z-index: 1;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.5rem;
   letter-spacing: -0.03em;
   color: var(--text);
+  animation: nameIn 0.6s ease both;
+  animation-delay: 0.32s;
 }
-@keyframes splashIn {
+@keyframes markIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.55) rotate(-14deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+@keyframes nameIn {
   from {
     opacity: 0;
-    transform: scale(0.82);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
+  }
+}
+@keyframes glowPulse {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.5);
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+    transform: translateX(-50%) scale(1.15);
   }
 }
 
