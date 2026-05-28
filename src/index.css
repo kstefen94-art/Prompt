@@ -231,10 +231,6 @@ code {
   letter-spacing: -0.04em;
   line-height: 1.1;
 }
-.page-hero h1::after {
-  content: '.';
-  color: var(--accent);
-}
 .page-hero p {
   margin: 8px 0 0;
   color: var(--muted);
