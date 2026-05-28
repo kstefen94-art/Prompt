@@ -1,21 +1,21 @@
-/* DARK CINEMATIC — 검은 배경 위에 밝은 민트 포인트, 이미지 중심 */
+/* BRIGHT PASTEL — 로고(하늘·파스텔·보라)에 맞춘 밝고 부드러운 톤 */
 :root {
-  --bg: #0b0c0f;
-  --surface: #16181d;
-  --card: #16181d;
-  --latte: #1c1f25;
-  --border: #282b32;
-  --text: #f1f2f4;
-  --muted: #969ca6;
+  --bg: #f4f4fc;
+  --surface: #ffffff;
+  --card: #ffffff;
+  --latte: #efeefb;
+  --border: #e6e6f4;
+  --text: #20223a;
+  --muted: #7a7e9c;
   --accent: #8b5cf6;
   --accent-hover: #7c3aed;
-  --accent-soft: #1e1733;
-  --code-bg: #111318;
-  --code-text: #c7ccd4;
+  --accent-soft: #efe9ff;
+  --code-bg: #f1f0fb;
+  --code-text: #5a4d6e;
   --radius: 18px;
-  --shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 18px 42px rgba(0, 0, 0, 0.5);
-  --bar-bg: rgba(11, 12, 15, 0.82);
-  --media-bg: #0a0b0d;
+  --shadow: 0 2px 4px rgba(80, 60, 140, 0.04), 0 14px 34px rgba(120, 90, 200, 0.1);
+  --bar-bg: rgba(244, 244, 252, 0.85);
+  --media-bg: #f3f4fb;
   --font: 'Pretendard', system-ui, -apple-system, 'Apple SD Gothic Neo',
     'Malgun Gothic', sans-serif;
   --font-display: 'Space Grotesk', 'Pretendard', system-ui, sans-serif;
@@ -388,7 +388,7 @@ code {
   top: 10px;
   right: 10px;
   border: none;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 8px;
   width: 28px;
   height: 28px;
@@ -956,12 +956,12 @@ code {
   background: var(--accent-soft);
 }
 .delete-btn {
-  border: 1px solid rgba(255, 107, 107, 0.5);
+  border: 1px solid rgba(216, 69, 59, 0.45);
   background: transparent;
-  color: #ff6b6b;
+  color: #d8453b;
 }
 .delete-btn:hover {
-  background: rgba(255, 107, 107, 0.12);
+  background: rgba(216, 69, 59, 0.1);
 }
 
 /* 수정 모달: 미디어 썸네일 */
